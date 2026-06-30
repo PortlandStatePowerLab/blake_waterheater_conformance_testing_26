@@ -68,7 +68,7 @@ Before opening or changing any enclosure wiring:
 4. Disconnect Raspberry Pi USB-C power.
 5. Do not assume a water heater breaker also de-energizes valve wiring.
 
-The wiring guide specifically notes that valve L1 is wired upstream of the water heater breaker and may remain energized even when the water heater breaker is off. :contentReference[oaicite:2]{index=2}
+The wiring guide specifically notes that valve L1 is wired upstream of the water heater breaker and may remain energized even when the water heater breaker is off. [link to document stating L1 energization, in forked repo: "embedded..."]
 
 ---
 
