@@ -33,8 +33,6 @@ This repo may include:
 - Test procedures for each water heater station
 - Troubleshooting notes
 - Analysis scripts and plots
-- Weekly planning / doing / done notes
-- Decision logs and handoff notes
 
 ---
 
