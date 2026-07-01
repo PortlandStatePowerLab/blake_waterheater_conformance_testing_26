@@ -82,11 +82,11 @@ Only files listed in `DEPLOY_MANIFEST.md` are intended to be copied to the Raspb
 - source_archive_index/ -- sourced indexes, audit indexes, and search/reference tracking
 
 ## Top-level files:
-README_FIRST.md -- first-read staging overview
-MASTER_INDEX.md -- repo map and where to look guide
-DEPLOY_MANIFEST.md -- allow-list of runtime files intended for Raspberry Pi copy.
-REVIEW_REQUIRED.md -- unresolved checks requiring review
-CHANGELOG_STAGING.md -- staging change notes
+- README_FIRST.md -- first-read staging overview
+- MASTER_INDEX.md -- repo map and where to look guide
+- DEPLOY_MANIFEST.md -- allow-list of runtime files intended for Raspberry Pi copy.
+- REVIEW_REQUIRED.md -- unresolved checks requiring review
+- CHANGELOG_STAGING.md -- staging change notes
 
 ## Important Links
 - [First-Read staging overview](./README_FIRST.md)
