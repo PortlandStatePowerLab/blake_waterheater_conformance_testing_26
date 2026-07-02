@@ -1,37 +1,47 @@
 # WH1 Review Required
 
-These items need human or hardware verification before Pi deployment moves past
-read-only diagnostics.
+This file tracks remaining human, hardware, software, and documentation checks
+before WH1 deployment moves past read-only diagnostics or controlled test runs.
 
-## Hardware identity
+Completed checks should be recorded as dated verification records under:
 
-- Confirm actual board marking for U11. Staging treats U11 as MAX1238EEE+.               done
-- Resolve any source document or CAD metadata that still names MAX1239.                  depricated
-- Confirm U12 is the TXS0104E level shifter path between Pi-side I2C and the
-  MAX1238 side.                                                                          done
-- Confirm U13 is ACS37800 and the usable part variant/register map.                      done
+```text
+project_control/verification_completed/
+```
 
-## GPIO and signal mapping
+## Completed verification records
 
-- Confirm valve relay output behavior, including active polarity and fail-safe
-  state, before any `--enable-output` valve test.                                        done
-- Confirm ACS37800 DIO_0 maps to GPIO18.                                                 done
-- Confirm ACS37800 DIO_1 maps to GPIO26.                                                 done
-- Confirm whether any legacy GPIO6 pulse-flow setup still exists physically.
-- Confirm whether any direct `/sys/bus/w1` DS18B20 sensor wiring still exists
-  physically.
+The following review gates have been completed and moved into verification records:
 
-## Software and data
+- Hardware identity verification:
+  `project_control/verification_completed/hardware_identity_VERIFIED_2026-07-01.md`
+- GPIO signal mapping verification:
+  `project_control/verification_completed/gpio_signal_mapping_VERIFIED_2026-07-01.md`
+- Valve relay operation verification:
+  `project_control/verification_completed/valve_relay_operation_VERIFIED_2026-07-01.md`
+
+## Still pending before full water-draw operation
+
+### Hardware physical-presence checks
+
+- Confirm whether any legacy `GPIO6` pulse-flow setup still exists physically.
+- Confirm whether any direct `/sys/bus/w1` DS18B20 sensor wiring still exists physically.
+
+### Software and data checks
 
 - Confirm correct schedule CSVs before re-enabling any scheduled draw workflow.
 - Confirm flow transmitter calibration and gallons-per-minute scaling.
-- Confirm temperature transmitter scaling and cold/hot channel readings on CH1
-  and CH0.
+- Confirm temperature transmitter scaling and cold/hot channel readings on CH1 and CH0.
 - Keep ADC channel constants sourced from `software/common/hardware_map.py`.
+- Verify ACS37800 register map, scaling, and usable software reads before replacing the safe placeholder diagnostic.
+
+### Controlled-output checks
+
+- `software/diagnostics/valve_gpio_check.py --enable-output` may be used only after confirming the completed valve relay verification record.
+- `software/water_draw/whs.py --enable-output` still requires ADC values, flow scaling, temperature scaling, and stop behavior to be reviewed on the real station before routine use.
 
 ## Documents
 
-- Treat Word documents in `docs/reference_only/` as historical unless no better
-  source exists.
-- Audit reports and crash recovery notes may mention stale script behavior; do
-  not use them as deployment instructions.
+- Treat Word documents in `docs/reference_only/` as historical unless no better source exists.
+- Audit reports and crash recovery notes may mention stale script behavior; do not use them as deployment instructions.
+- Resolve, supersede, or archive any stale source document or CAD metadata that still names `MAX1239`.
