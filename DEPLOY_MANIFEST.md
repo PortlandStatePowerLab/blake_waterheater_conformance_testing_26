@@ -40,11 +40,23 @@ python3 software/diagnostics/valve_gpio_check.py
 `read_acs37800_once.py` is intentionally a review-required stub until the usable
 register map is verified.
 
+## Controlled output commands
+
+`software/diagnostics/valve_gpio_check.py --enable-output` may be used only after
+confirming the completed valve relay verification record:
+
+```text
+project_control/verification_completed/valve_relay_operation_VERIFIED_2026-07-01.md
+```
+
+`software/water_draw/whs.py --enable-output` still requires ADC values, flow
+scaling, temperature scaling, and stop behavior to be reviewed on the real
+station before routine use.
+
 ## Do not run yet
 
 - Anything under `legacy_deprecated/`.
 - Any direct DS18B20 or GPIO6 flow-count script from legacy.
-- `software/diagnostics/valve_gpio_check.py --enable-output` until relay output
-  behavior is physically verified.
 - `software/water_draw/whs.py --enable-output` until ADC values, flow scaling,
-  relay polarity, and stop behavior have been reviewed on the real station.
+  relay polarity, temperature scaling, and stop behavior have been reviewed on
+  the real station.
