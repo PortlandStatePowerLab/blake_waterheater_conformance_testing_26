@@ -28,16 +28,29 @@ Date: 2026-06-25
 - Generated caches/logs and old duplicate source copies.
 - Broken or incomplete historical experiments.
 
-## Flagged
+## Verification records added
 
-- Stale ADC part-name references in copied source material.
-- ACS37800 DIO GPIO mapping requires schematic/board review.
-- Valve relay polarity and fail-safe behavior require physical verification.
+- Hardware identity verification was recorded in:
+  `project_control/verification_completed/hardware_identity_VERIFIED_2026-07-01.md`
+- GPIO signal mapping verification was recorded in:
+  `project_control/verification_completed/gpio_signal_mapping_VERIFIED_2026-07-01.md`
+- Valve relay operation verification was recorded in:
+  `project_control/verification_completed/valve_relay_operation_VERIFIED_2026-07-01.md`
+
+## Still flagged or pending
+
+- Stale ADC part-name references may remain in copied source material or CAD metadata.
 - Schedule CSV expectations require review before scheduled operation.
+- Legacy GPIO6 pulse-flow wiring requires physical-presence review.
+- Legacy direct DS18B20 wiring requires physical-presence review.
+- Flow transmitter calibration and gallons-per-minute scaling require review.
+- Temperature transmitter scaling and hot/cold channel readings require review.
+- ACS37800 register map, scaling, and usable software reads require review before replacing the safe placeholder diagnostic.
 
-## Still required before Pi actuation
+## Still required before full Pi actuation
 
 - Run only the safe Pi sequence in
   `deployment/test_run_order/FIRST_PI_TEST_SEQUENCE.md`.
 - Verify I2C device presence before any sensor read.
-- Verify relay polarity with a meter/load-safe setup before enabling GPIO17.
+- Confirm completed valve relay verification record before using valve GPIO output checks.
+- Verify ADC values, flow scaling, temperature scaling, and stop behavior before routine `software/water_draw/whs.py --enable-output` use.
