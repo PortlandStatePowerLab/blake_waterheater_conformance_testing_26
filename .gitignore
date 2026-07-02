@@ -1,0 +1,28 @@
+# Python cache / bytecode
+__pycache__/
+*.py[cod]
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Local virtual environments
+.venv/
+venv/
+env/
+
+# Generated runtime outputs
+logs/*
+!logs/README.md
+
+data/generated/*
+!data/generated/README.md
+
+data/raw/*
+!data/raw/README.md
+
+data/combined/*
+!data/combined/README.md
+
+outputs/*
+!outputs/README.md
