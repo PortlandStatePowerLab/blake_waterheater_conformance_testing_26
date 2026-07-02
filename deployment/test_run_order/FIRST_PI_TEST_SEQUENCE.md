@@ -78,3 +78,17 @@ fail-safe behavior are physically verified:
 python3 software/diagnostics/valve_gpio_check.py --enable-output --state off
 python3 software/water_draw/whs.py --target-gal 0.1 --enable-output
 ```
+
+## Reference Records
+
+Completed or observed test records should be stored under:
+
+```text
+test_records/
+```
+
+Current initial Pi diagnostic record:
+
+```text
+test_records/WH1_initial_pi_test_2026-06-29.md
+```
