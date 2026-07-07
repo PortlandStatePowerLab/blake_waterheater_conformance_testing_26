@@ -27,7 +27,8 @@ This audit bins entrypoint candidates only. It does not classify every helper mo
 
 - `DIAGNOSTIC_ENTRYPOINT`: 4
 - `LEGACY_ENTRYPOINT`: 28
-- `UNKNOWN_ENTRYPOINT`: 1
+- `ACTIVE_ENTRYPOINT`: 1
+- `UNKNOWN_ENTRYPOINT`: 0
 
 ## Entrypoint Candidates
 
@@ -257,10 +258,10 @@ This audit bins entrypoint candidates only. It does not classify every helper mo
 
 ### `software/water_draw/whs.py`
 
-- Initial bin: `UNKNOWN_ENTRYPOINT`
+- Initial bin: `ACTIVE_ENTRYPOINT`
 - Evidence: `main_guard`
 - Hardware-coupled: yes
-- Notes: Hardware-coupled runnable candidate outside diagnostics/legacy; needs review. Module note: ADC-based WH1 water draw control for the current PCB-ribbon hardware.
+- Notes: Active WH1 water-draw runtime entrypoint for the current PCB-ribbon hardware. Dry-run-first CLI; requires `--enable-output` before opening ADC/GPIO and driving GPIO valve control. Refactor-later candidate for hardware-agnostic command shape.
 
 ## Parse Errors
 
