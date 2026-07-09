@@ -1,1 +1,1 @@
-﻿# Non-actuating diagnostics package.
+# Non-actuating diagnostics package.
