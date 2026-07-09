@@ -1,4 +1,4 @@
-﻿# Shared WH1 Rev A hardware constants.
+# Shared WH1 Rev A hardware constants.
 
 ADC_PART = "MAX1238EEE+"
 ADC_VREF = 4.096

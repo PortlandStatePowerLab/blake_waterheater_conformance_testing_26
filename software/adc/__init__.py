@@ -1,1 +1,1 @@
-﻿# MAX1238 ADC driver package.
+# MAX1238 ADC driver package.

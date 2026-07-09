@@ -1,1 +1,1 @@
-﻿# Shared WH1 constants and helpers.
+# Shared WH1 constants and helpers.
