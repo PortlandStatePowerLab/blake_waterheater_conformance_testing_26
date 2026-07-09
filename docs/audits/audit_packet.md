@@ -460,9 +460,18 @@ Purpose: whole-system inventory before binning entrypoints, helper files, classe
 
 ### `software/__init__.py`
 
+> Historical note: these UTF-8 BOM / U+FEFF parse errors were resolved by PR 103.
+> They are retained here as pre-cleanup audit findings, not current failures.
+
 - Parse status: `SyntaxError line 1: invalid non-printable character U+FEFF`
 
+> Historical note: these UTF-8 BOM / U+FEFF parse errors were resolved by PR 103.
+> They are retained here as pre-cleanup audit findings, not current failures.
+
 ### `software/adc/__init__.py`
+
+> Historical note: these UTF-8 BOM / U+FEFF parse errors were resolved by PR 103.
+> They are retained here as pre-cleanup audit findings, not current failures.
 
 - Parse status: `SyntaxError line 1: invalid non-printable character U+FEFF`
 
@@ -504,13 +513,22 @@ Purpose: whole-system inventory before binning entrypoints, helper files, classe
 
 ### `software/common/__init__.py`
 
+> Historical note: these UTF-8 BOM / U+FEFF parse errors were resolved by PR 103.
+> They are retained here as pre-cleanup audit findings, not current failures.
+
 - Parse status: `SyntaxError line 1: invalid non-printable character U+FEFF`
 
 ### `software/common/hardware_map.py`
 
+> Historical note: these UTF-8 BOM / U+FEFF parse errors were resolved by PR 103.
+> They are retained here as pre-cleanup audit findings, not current failures.
+
 - Parse status: `SyntaxError line 1: invalid non-printable character U+FEFF`
 
 ### `software/diagnostics/__init__.py`
+
+> Historical note: these UTF-8 BOM / U+FEFF parse errors were resolved by PR 103.
+> They are retained here as pre-cleanup audit findings, not current failures.
 
 - Parse status: `SyntaxError line 1: invalid non-printable character U+FEFF`
 
@@ -561,9 +579,15 @@ Purpose: whole-system inventory before binning entrypoints, helper files, classe
 
 ### `software/power_monitoring/__init__.py`
 
+> Historical note: these UTF-8 BOM / U+FEFF parse errors were resolved by PR 103.
+> They are retained here as pre-cleanup audit findings, not current failures.
+
 - Parse status: `SyntaxError line 1: invalid non-printable character U+FEFF`
 
 ### `software/rs485_cta2045/__init__.py`
+
+> Historical note: these UTF-8 BOM / U+FEFF parse errors were resolved by PR 103.
+> They are retained here as pre-cleanup audit findings, not current failures.
 
 - Parse status: `SyntaxError line 1: invalid non-printable character U+FEFF`
 
@@ -581,9 +605,15 @@ Purpose: whole-system inventory before binning entrypoints, helper files, classe
 
 ### `software/valve_control/__init__.py`
 
+> Historical note: these UTF-8 BOM / U+FEFF parse errors were resolved by PR 103.
+> They are retained here as pre-cleanup audit findings, not current failures.
+
 - Parse status: `SyntaxError line 1: invalid non-printable character U+FEFF`
 
 ### `software/water_draw/__init__.py`
+
+> Historical note: these UTF-8 BOM / U+FEFF parse errors were resolved by PR 103.
+> They are retained here as pre-cleanup audit findings, not current failures.
 
 - Parse status: `SyntaxError line 1: invalid non-printable character U+FEFF`
 
@@ -1152,6 +1182,9 @@ Excluded:
 
 ## Parse errors
 
+> Historical note: these UTF-8 BOM / U+FEFF parse errors were resolved by PR 103.
+> They are retained here as pre-cleanup audit findings, not current failures.
+
 | File | Line | Error |
 | --- | ---: | --- |
 | `software/__init__.py` | 1 | invalid non-printable character U+FEFF |
@@ -1302,6 +1335,9 @@ Excluded:
 | `software/water_draw/whs.py` | 188 | `main` | `function` | `REQUIRES_PI_STATION` | GPIO/relay/valve control requires Pi/station hardware. |
 
 ## Parse errors
+
+> Historical note: these UTF-8 BOM / U+FEFF parse errors were resolved by PR 103.
+> They are retained here as pre-cleanup audit findings, not current failures.
 
 | File | Line | Error |
 | --- | ---: | --- |

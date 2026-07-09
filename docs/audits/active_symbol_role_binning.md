@@ -118,6 +118,9 @@ Excluded:
 
 ## Parse errors
 
+> Historical note: these UTF-8 BOM / U+FEFF parse errors were resolved by PR 103.
+> They are retained here as pre-cleanup audit findings, not current failures.
+
 | File | Line | Error |
 | --- | ---: | --- |
 | `software/__init__.py` | 1 | invalid non-printable character U+FEFF |

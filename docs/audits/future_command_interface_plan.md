@@ -372,7 +372,7 @@ Shell aliases may still be useful, but aliases should be convenience sugar only.
 - `software/power_monitoring/acs37800.py` does not currently exist as an active helper.
 - ACS37800 reusable helper extraction should be a separate future card.
 - `software/water_draw/whs.py` is active hardware-coupled runtime code and should not be moved casually.
-- Active package/config files currently have UTF-8 BOM parse errors in existing audits; cleanup should be a separate card.
+- Active package/config files previously had UTF-8 BOM parse errors in existing audits; cleanup was completed in PR 103.
 
 ## Done when
 
