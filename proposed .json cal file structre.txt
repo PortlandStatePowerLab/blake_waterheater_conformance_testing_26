@@ -1,0 +1,92 @@
+proposed .json cal file structre
+
+{
+  "schema_version": 1,
+  "station_id": "WH1",
+  "created_at": "2026-07-10T09:00:00-07:00",
+  "created_by": "Blake Ellis",
+  "notes": "Initial station calibration record. Missing values remain nominal.",
+
+  "electrical": {
+    "adc_reference_voltage_v": 4.096,
+    "shunt_ohms": 120.0,
+    "status": "nominal",
+    "source": "MAX1238 datasheet and station hardware documentation"
+  },
+
+  "sensor_ranges": {
+    "temperature_min_c": -50.0,
+    "temperature_max_c": 150.0,
+    "flow_min_gpm": 0.0,
+    "flow_max_gpm": 10.0,
+    "status": "nominal",
+    "source": "installed transmitter configuration"
+  },
+
+  "channels": {
+    "0": {
+      "role": "hot_temp",
+      "units": "degC",
+      "status": "nominal",
+      "method": "manufacturer span",
+      "calibration_points": []
+    },
+
+    "1": {
+      "role": "cold_temp",
+      "units": "degC",
+      "status": "nominal",
+      "method": "manufacturer span; no independent cold-water reference available",
+      "calibration_points": []
+    },
+
+    "2": {
+      "role": "flow",
+      "units": "gpm",
+      "status": "verified",
+      "method": "compared ADC reading with flow-meter digital display",
+      "calibration_points": [
+        {
+          "reference_value": 0.0,
+          "raw_counts_mean": 484.2,
+          "raw_counts_min": 482,
+          "raw_counts_max": 486,
+          "sample_count": 200,
+          "condition": "valve closed"
+        },
+        {
+          "reference_value": 3.45,
+          "raw_counts_mean": 1835.6,
+          "raw_counts_min": 1828,
+          "raw_counts_max": 1842,
+          "sample_count": 200,
+          "condition": "stable draw"
+        }
+      ],
+      "fit": {
+        "type": "linear",
+        "slope_per_count": null,
+        "offset": null
+      }
+    },
+
+    "4": {
+      "role": "ambient_temp",
+      "units": "degC",
+      "status": "verified",
+      "method": "compared with thermostat below control boxes",
+      "calibration_points": [
+        {
+          "reference_value": 24.0,
+          "raw_counts_mean": 244.1,
+          "sample_count": 200,
+          "condition": "room stable"
+        }
+      ],
+      "fit": {
+        "type": "offset_only",
+        "offset": null
+      }
+    }
+  }
+}
