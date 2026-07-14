@@ -3,7 +3,8 @@
 
 This diagnostic assembles the station MAX1238 and ``SensorReader`` boundaries.
 It reads one snapshot by default or watches continuously when requested. It does
-not configure GPIO, actuate the valve, or access the ACS37800.
+not configure GPIO, actuate the valve, or access the ACS37800. In watch mode it
+also reports elapsed runtime and the observed flow raw-count range.
 """
 
 # region Imports
@@ -15,6 +16,7 @@ from __future__ import annotations
 import argparse
 import sys
 import time
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Sequence
@@ -38,6 +40,44 @@ DEFAULT_WATCH_INTERVAL_S = 1.0
 # endregion Diagnostic Configuration
 
 # region Snapshot Reporting
+
+# Tracks cumulative watch-mode runtime and flow raw-count range.
+@dataclass
+class WatchRuntimeStats:
+    """Track cumulative sensor-check watch statistics."""
+
+    start_monotonic_s: float
+    snapshot_count: int = 0
+    min_flow_raw_counts: int | None = None
+    max_flow_raw_counts: int | None = None
+
+    # Updates cumulative flow-count statistics with one grouped ``snapshot``.
+    def update(self, snapshot: SensorSnapshot) -> None:
+        """Update watch statistics from one grouped sensor snapshot."""
+        flow_raw_counts = snapshot.flow_raw_counts
+        self.snapshot_count += 1
+
+        if self.min_flow_raw_counts is None:
+            self.min_flow_raw_counts = flow_raw_counts
+        else:
+            self.min_flow_raw_counts = min(
+                self.min_flow_raw_counts,
+                flow_raw_counts,
+            )
+
+        if self.max_flow_raw_counts is None:
+            self.max_flow_raw_counts = flow_raw_counts
+        else:
+            self.max_flow_raw_counts = max(
+                self.max_flow_raw_counts,
+                flow_raw_counts,
+            )
+
+    # Calculates elapsed watch runtime from ``now_monotonic_s``.
+    def elapsed_s(self, now_monotonic_s: float) -> float:
+        """Return elapsed watch runtime in seconds."""
+        return max(0.0, now_monotonic_s - self.start_monotonic_s)
+
 
 # Formats and prints one grouped ``snapshot`` with its local ``timestamp``.
 def print_sensor_snapshot(
@@ -72,6 +112,24 @@ def print_sensor_snapshot(
     )
 
 
+# Formats and prints cumulative watch-mode runtime statistics.
+def print_watch_runtime_stats(
+    stats: WatchRuntimeStats,
+    *,
+    now_monotonic_s: float,
+) -> None:
+    """Print elapsed watch runtime and cumulative flow raw-count limits."""
+    print(
+        "Watch runtime\n"
+        f"  {'elapsed_s':<22}: {stats.elapsed_s(now_monotonic_s):.1f} s\n"
+        f"  {'snapshots':<22}: {stats.snapshot_count}\n"
+        f"  {'flow_raw_counts_min':<22}: "
+        f"{stats.min_flow_raw_counts} counts\n"
+        f"  {'flow_raw_counts_max':<22}: "
+        f"{stats.max_flow_raw_counts} counts"
+    )
+
+
 # Obtains and prints one snapshot or watches at ``interval_s`` until interrupted.
 def run_sensor_check(
     reader: SensorReader,
@@ -80,6 +138,8 @@ def run_sensor_check(
     interval_s: float,
 ) -> None:
     """Collect and print grouped snapshots through an injected sensor reader."""
+    watch_stats = WatchRuntimeStats(time.monotonic()) if watch else None
+
     while True:
         sensor_snapshot = reader.get_sensor_snapshot()
         print_sensor_snapshot(sensor_snapshot, datetime.now().astimezone())
@@ -87,6 +147,12 @@ def run_sensor_check(
         if not watch:
             return
 
+        assert watch_stats is not None
+        watch_stats.update(sensor_snapshot)
+        print_watch_runtime_stats(
+            watch_stats,
+            now_monotonic_s=time.monotonic(),
+        )
         print()
         time.sleep(interval_s)
 

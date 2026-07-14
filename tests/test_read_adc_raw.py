@@ -26,6 +26,26 @@ class FakeAdc:
         self.closed = True
 
 
+class SequenceFakeAdc:
+    """Provide deterministic raw-count scans for watch-mode tests."""
+
+    def __init__(self, scans: list[dict[int, int]]) -> None:
+        self._scans = scans
+        self.read_single_channels: list[int] = []
+        self.closed = False
+
+    def read_single(self, channel: int, /) -> int:
+        scan_index = len(self.read_single_channels) // len(read_adc_raw.CHANNELS)
+        if scan_index >= len(self._scans):
+            raise KeyboardInterrupt
+
+        self.read_single_channels.append(channel)
+        return self._scans[scan_index][channel]
+
+    def close(self) -> None:
+        self.closed = True
+
+
 class ReadAdcRawTest(unittest.TestCase):
     """Verify one-shot raw ADC diagnostic assembly with a pure fake ADC."""
 
@@ -72,6 +92,60 @@ class ReadAdcRawTest(unittest.TestCase):
             " V",
         ):
             self.assertIn(report_text, output)
+
+    def test_watch_prints_runtime_and_channel_raw_count_ranges(self) -> None:
+        first_scan = {
+            channel: 1000 + channel
+            for _label, channel in read_adc_raw.CHANNELS
+        }
+        second_scan = {
+            channel: 900 + channel
+            for _label, channel in read_adc_raw.CHANNELS
+        }
+        fake_adc = SequenceFakeAdc([first_scan, second_scan])
+        captured_output = io.StringIO()
+
+        with (
+            patch.object(
+                read_adc_raw,
+                "build_max1238",
+                return_value=fake_adc,
+            ) as build_max1238,
+            patch.object(
+                read_adc_raw.time,
+                "monotonic",
+                side_effect=[100.0, 100.5, 102.0],
+            ),
+            patch.object(read_adc_raw.time, "sleep", return_value=None),
+            contextlib.redirect_stdout(captured_output),
+        ):
+            exit_code = read_adc_raw.main(["--watch"])
+
+        self.assertEqual(exit_code, 0)
+        build_max1238.assert_called_once_with(
+            bus_num=read_adc_raw.MAX1238_I2C_BUS,
+            address=read_adc_raw.MAX1238_I2C_ADDR,
+        )
+        self.assertEqual(
+            fake_adc.read_single_channels,
+            [channel for _, channel in read_adc_raw.CHANNELS] * 2,
+        )
+        self.assertTrue(fake_adc.closed)
+
+        output = captured_output.getvalue()
+        for report_text in (
+            "ADC raw watch runtime",
+            "  elapsed_s             : 2.0 s",
+            "  scans                 : 2",
+            "Raw count ranges",
+            "    min_raw_counts    : 900 counts",
+            "    max_raw_counts    : 1000 counts",
+            "ADC raw watch stopped.",
+        ):
+            self.assertIn(report_text, output)
+
+        for label, channel in read_adc_raw.CHANNELS:
+            self.assertIn(f"  CH{channel} {label}", output)
 
 
 if __name__ == "__main__":

@@ -46,8 +46,39 @@ class FakeAdc:
         self.closed = True
 
 
+class FakeReader:
+    """Provide deterministic snapshots for watch-mode reporting tests."""
+
+    def __init__(self, snapshots: list[sensor_check.SensorSnapshot]) -> None:
+        self._snapshots = snapshots
+        self.get_sensor_snapshot_calls = 0
+
+    def get_sensor_snapshot(self) -> sensor_check.SensorSnapshot:
+        if self.get_sensor_snapshot_calls >= len(self._snapshots):
+            raise KeyboardInterrupt
+
+        snapshot = self._snapshots[self.get_sensor_snapshot_calls]
+        self.get_sensor_snapshot_calls += 1
+        return snapshot
+
+
 class SensorCheckTest(unittest.TestCase):
     """Verify one-shot diagnostic assembly with a pure fake ADC."""
+
+    def make_snapshot(self, *, flow_raw_counts: int) -> sensor_check.SensorSnapshot:
+        return sensor_check.SensorSnapshot(
+            hot_raw_counts=1000,
+            cold_raw_counts=900,
+            flow_raw_counts=flow_raw_counts,
+            ambient_raw_counts=700,
+            hot_temp_c=25.0,
+            hot_temp_f=77.0,
+            cold_temp_c=20.0,
+            cold_temp_f=68.0,
+            ambient_temp_c=22.0,
+            ambient_temp_f=71.6,
+            flow_gpm=1.5,
+        )
 
     def test_main_builds_once_prints_one_grouped_snapshot_and_closes(self) -> None:
         fake_adc = FakeAdc()
@@ -93,6 +124,43 @@ class SensorCheckTest(unittest.TestCase):
             " °C",
             " °F",
             " GPM",
+        ):
+            self.assertIn(report_text, output)
+
+    def test_watch_prints_runtime_and_flow_raw_count_range(self) -> None:
+        fake_reader = FakeReader(
+            [
+                self.make_snapshot(flow_raw_counts=810),
+                self.make_snapshot(flow_raw_counts=790),
+            ]
+        )
+        captured_output = io.StringIO()
+
+        with (
+            patch.object(
+                sensor_check.time,
+                "monotonic",
+                side_effect=[100.0, 100.5, 102.0],
+            ),
+            patch.object(sensor_check.time, "sleep", return_value=None),
+            contextlib.redirect_stdout(captured_output),
+        ):
+            with self.assertRaises(KeyboardInterrupt):
+                sensor_check.run_sensor_check(
+                    fake_reader,
+                    watch=True,
+                    interval_s=1.0,
+                )
+
+        self.assertEqual(fake_reader.get_sensor_snapshot_calls, 2)
+
+        output = captured_output.getvalue()
+        for report_text in (
+            "Watch runtime",
+            "  elapsed_s             : 2.0 s",
+            "  snapshots             : 2",
+            "  flow_raw_counts_min   : 790 counts",
+            "  flow_raw_counts_max   : 810 counts",
         ):
             self.assertIn(report_text, output)
 
