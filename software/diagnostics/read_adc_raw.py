@@ -11,10 +11,12 @@ voltage. It does not drive station outputs.
 # Enables postponed evaluation of type annotations as a Python language feature.
 from __future__ import annotations
 
-# Standard-library helpers for command-line parsing and project-root discovery.
+# Standard-library helpers for command-line parsing, timestamps, and root discovery.
 import argparse
 import sys
+from datetime import datetime
 from pathlib import Path
+from typing import Sequence
 
 # Makes the project package importable when this diagnostic runs as a script.
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -56,11 +58,47 @@ CHANNELS = (
 
 # endregion Diagnostic Configuration
 
+# region Diagnostic Reporting
+
+# Formats and prints one ADC raw diagnostic report.
+def print_adc_raw_report(
+    *,
+    timestamp: datetime,
+    adc_part: str,
+    bus: int,
+    address: int,
+    reference_voltage_v: float,
+    channel_readings: Sequence[tuple[str, int, int, float]],
+) -> None:
+    """Print one timestamped ADC raw report with explicit names and units."""
+    timestamp_text = timestamp.astimezone().isoformat(timespec="seconds")
+
+    print(
+        f"ADC raw diagnostic at {timestamp_text}\n"
+        "\n"
+        "ADC configuration\n"
+        f"  {'adc_part':<22}: {adc_part}\n"
+        f"  {'i2c_bus':<22}: {bus}\n"
+        f"  {'i2c_address':<22}: 0x{address:02X}\n"
+        f"  {'reference_voltage_v':<22}: {reference_voltage_v:.3f} V\n"
+        "\n"
+        "Channel readings"
+    )
+
+    for label, channel, raw_counts, voltage_v in channel_readings:
+        print(
+            f"  CH{channel} {label}\n"
+            f"    {'raw_counts':<18}: {raw_counts} counts\n"
+            f"    {'input_voltage_v':<18}: {voltage_v:.4f} V"
+        )
+
+# endregion Diagnostic Reporting
+
 # region Diagnostic Entry Point
 
-# Constructs the ADC and reports raw counts and converted voltages without
-# driving station outputs.
-def main() -> int:
+# Parses diagnostic command-line options.
+def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
+    """Parse read-adc-raw command-line arguments."""
     parser = argparse.ArgumentParser(
         description="Read raw MAX1238 channels without driving outputs."
     )
@@ -76,22 +114,20 @@ def main() -> int:
         default=MAX1238_I2C_ADDR,
         help=f"MAX1238 I2C address, default 0x{MAX1238_I2C_ADDR:02X}",
     )
-    args = parser.parse_args()
+    return parser.parse_args(argv)
 
-    print(f"ADC part: {ADC_PART}")
-    print(f"I2C bus: {args.bus}")
-    print(f"I2C address: 0x{args.address:02X}")
-    print(
-        "ADC reference voltage: "
-        f"{NOMINAL_SENSOR_CONFIG.adc_reference_voltage_v:.3f} V"
-    )
-
+# Constructs the ADC and reports raw counts and converted voltages without
+# driving station outputs.
+def main(argv: Sequence[str] | None = None) -> int:
+    args = parse_args(argv)
     adc = build_max1238(
         bus_num=args.bus,
         address=args.address,
     )
 
     try:
+        channel_readings: list[tuple[str, int, int, float]] = []
+
         for label, channel in CHANNELS:
             raw_counts = adc.read_single(channel)
 
@@ -99,12 +135,16 @@ def main() -> int:
                 raise RuntimeError(f"ADC returned no value for channel {channel}")
 
             voltage_v = adc_counts_to_voltage(raw_counts)
+            channel_readings.append((label, channel, raw_counts, voltage_v))
 
-            print(
-                f"CH{channel} {label}: "
-                f"raw={raw_counts:4d} "
-                f"voltage={voltage_v:.4f} V"
-            )
+        print_adc_raw_report(
+            timestamp=datetime.now().astimezone(),
+            adc_part=ADC_PART,
+            bus=args.bus,
+            address=args.address,
+            reference_voltage_v=NOMINAL_SENSOR_CONFIG.adc_reference_voltage_v,
+            channel_readings=channel_readings,
+        )
     finally:
         adc.close()
 
