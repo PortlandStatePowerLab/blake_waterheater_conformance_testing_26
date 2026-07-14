@@ -58,9 +58,12 @@ def print_sensor_snapshot(
         "\n"
         "Converted values\n"
         f"  {'hot_temp_c':<18}: {snapshot.hot_temp_c:.3f} °C\n"
+        f"  {'hot_temp_f':<18}: {snapshot.hot_temp_f:.3f} °F\n"
         f"  {'cold_temp_c':<18}: {snapshot.cold_temp_c:.3f} °C\n"
+        f"  {'cold_temp_f':<18}: {snapshot.cold_temp_f:.3f} °F\n"
         f"  {'flow_gpm':<18}: {snapshot.flow_gpm:.3f} GPM\n"
-        f"  {'ambient_temp_c':<18}: {snapshot.ambient_temp_c:.3f} °C"
+        f"  {'ambient_temp_c':<18}: {snapshot.ambient_temp_c:.3f} °C\n"
+        f"  {'ambient_temp_f':<18}: {snapshot.ambient_temp_f:.3f} °F"
     )
 
 

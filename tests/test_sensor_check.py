@@ -81,10 +81,14 @@ class SensorCheckTest(unittest.TestCase):
             "  ambient_raw_counts: 700 counts",
             "Converted values",
             "  hot_temp_c        :",
+            "  hot_temp_f        :",
             "  cold_temp_c       :",
+            "  cold_temp_f       :",
             "  flow_gpm          :",
             "  ambient_temp_c    :",
+            "  ambient_temp_f    :",
             " °C",
+            " °F",
             " GPM",
         ):
             self.assertIn(report_text, output)
