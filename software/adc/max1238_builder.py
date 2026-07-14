@@ -47,9 +47,8 @@ def build_max1238(
     """Construct and configure one ready-to-use MAX1238 ADC.
 
     Args:
-        bus_num (int): Linux I2C bus number. The station default is bus 1.
-        address (int): Seven-bit MAX1238 I2C address. The station default is
-            ``0x35``.
+        bus_num (int): Linux I2C bus number. Defaults to station mapped bus.
+        address (int): Seven-bit MAX1238 I2C address. Defaults to station mapped address.
 
     Returns:
         A configured ``Max1238`` object with an open SMBus connection.
