@@ -1,12 +1,12 @@
-"""Configured sensor operations for the water-heater test station.
+"""Hardware-agnostic sensor services for the water-heater test station.
 
-This module owns the boundary between the MAX1238 ADC driver and the pure
-sensor-conversion functions. It loads optional JSON calibration overrides,
-builds one effective conversion configuration, and caches the corresponding
-temperature and flow spans for individual reads and grouped sensor snapshots.
+This module reads an injected station ADC through the minimal ``SensorAdc``
+interface and applies the pure sensor-conversion functions. It loads optional
+JSON calibration overrides, builds one effective conversion configuration, and
+caches the corresponding temperature and flow spans.
 
-The module performs ADC reads and converts them into station measurements. It
-does not control the valve, schedule draws, print results, or write CSV files.
+The module does not construct, configure, own, or close hardware. It also does
+not control valves, schedule draws, print results, or write CSV files.
 """
 
 # region Imports
@@ -18,10 +18,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import Optional
-
-# MAX1238 ADC hardware driver ``Max1238``.
-from software.adc.max1238 import Max1238
+from typing import Protocol
 
 # Station sensor-channel assignments.
 from software.common.hardware_map import (
@@ -44,30 +41,37 @@ from software.sensor_conversion import (
 
 # region Sensor Conversion Configuration
 
-# Loads optional calibration values into ``SensorConversionConfig`` while retaining nominal defaults for omitted values.
+# Loads calibration overrides while retaining nominal values for omitted fields.
 def load_sensor_conversion_config(
     calibration_path: Path | None,
 ) -> SensorConversionConfig:
     """Load optional calibration overrides onto the nominal configuration.
 
     Args:
-        calibration_path (Path | None): JSON calibration path. When ``None`` or absent,
-            nominal conversion values are returned.
+        calibration_path (Path | None): Optional JSON calibration path. When
+            ``None``, nominal conversion values are returned. An explicitly
+            supplied path must exist.
 
     Returns:
         Effective sensor-conversion configuration.
 
     Raises:
+        FileNotFoundError: If an explicitly supplied calibration path does not
+            exist.
+
         ValueError: If an existing calibration file is malformed or contains
             invalid values.
     """
-    if calibration_path is None or not calibration_path.exists():
+    if calibration_path is None:
         return NOMINAL_SENSOR_CONFIG
 
+    if not calibration_path.exists():
+        raise FileNotFoundError(
+            f"Calibration file does not exist: {calibration_path}"
+        )
+
     # Parses the calibration file into root mapping ``calibration_data``.
-    calibration_data = json.loads(
-        calibration_path.read_text(encoding="utf-8")
-    )
+    calibration_data = json.loads(calibration_path.read_text(encoding="utf-8"))
     if not isinstance(calibration_data, dict):
         raise ValueError("calibration data must be a JSON object")
 
@@ -127,27 +131,34 @@ def load_sensor_conversion_config(
 
 # region Sensor Data
 
-# Holds one processed reading from each active station sensor in ``SensorSnapshot``.
+# Stores raw ADC counts and converted measurements from one grouped sensor scan.
 @dataclass(frozen=True)
 class SensorSnapshot:
-    """Contains one processed reading from each active station sensor.
+    """Store raw and converted readings from one grouped sensor scan.
 
     Attributes:
+        hot_raw_counts (int): Raw ADC counts for the hot-water transmitter.
+        cold_raw_counts (int): Raw ADC counts for the cold-water transmitter.
+        flow_raw_counts (int): Raw ADC counts for the flow transmitter.
+        ambient_raw_counts (int): Raw ADC counts for the ambient sensor.
         hot_temp_c (float): Hot-water transmitter temperature in degrees Celsius.
         cold_temp_c (float): Cold-water transmitter temperature in degrees Celsius.
-        ambient_temp_c (float): PCB-mounted LM35 ambient temperature in degrees Celsius.
+        ambient_temp_c (float): LM35 ambient temperature in degrees Celsius.
         flow_gpm (float): Flow transmitter reading in gallons per minute.
 
     Timing:
         Values are read sequentially during one ADC scan and are not physically
         simultaneous.
     """
+    hot_raw_counts: int
+    cold_raw_counts: int
+    flow_raw_counts: int
+    ambient_raw_counts: int
 
     hot_temp_c: float
     cold_temp_c: float
     ambient_temp_c: float
     flow_gpm: float
-
 
 # endregion Sensor Data
 
@@ -169,6 +180,7 @@ def get_scanned_channel_raw(
 
     Raises:
         ValueError: If ``channel`` is not an active sensor channel.
+        KeyError: If the completed scan does not contain ``channel``.
     """
     valid_channels = {
         CH_HOT,
@@ -184,48 +196,56 @@ def get_scanned_channel_raw(
 
 # endregion Scanned-Channel Lookup
 
+# region Sensor ADC Interface
+
+# Defines the borrowed ADC read interface required by ``SensorReader``.
+class SensorAdc(Protocol):
+    """Define the ADC read operations required by ``SensorReader``."""
+
+    def read_single(self, channel: int) -> int | None:
+        """Return one ADC channel result in raw counts."""
+        ...
+
+    def read_range(
+        self,
+        first_channel: int,
+        last_channel: int,
+    ) -> dict[int, int]:
+        """Return raw counts for a sequential ADC channel scan."""
+        ...
+
+# endregion Sensor ADC Interface
+
 # region Sensor Reader
 
 # Reads ADC channels with ``SensorReader`` and converts their values into sensor measurements.
 class SensorReader:
-    """Read and convert active water-heater station sensor channels.
+    """Read and convert active station sensors through a borrowed ADC.
 
     Args:
-        adc (Optional[Max1238]): Optional existing ``Max1238`` driver. When omitted, this class
-            opens its own MAX1238 connection.
-        initialize_adc (bool): Configure the ADC during initialization. This should
-            normally remain true for hardware operation. Tests using a fake ADC
-            may set it false.
-        calibration_path (Path | None): Optional JSON calibration path. When omitted or when
-            the path does not exist, nominal sensor-conversion values are used.
+        adc (SensorAdc): ADC-compatible object supplied by the station assembly
+            layer. The caller retains ownership of the object.
+        calibration_path (Path | None): Optional JSON calibration path. When
+            omitted, nominal sensor-conversion values are used. An explicitly
+            supplied path must exist.
 
     Resource ownership:
-        A MAX1238 instance created internally is closed by :meth:`close`.
-        An externally supplied ADC instance remains owned by the caller.
+        The caller constructs, configures, owns, and closes the supplied ADC.
     """
     # region Initialization
 
-    # Initializes ADC ownership ``_adc``, configuration ``_conversion_config``, cached spans, and optional ADC setup.
+    # Stores the borrowed ADC ``_adc``, loads conversion configuration, and caches spans.
     def __init__(
         self,
-        adc: Optional[Max1238] = None,
+        adc: SensorAdc,
         *,
-        initialize_adc: bool = True,
         calibration_path: Path | None = None,
     ) -> None:
-        self._owns_adc = adc is None
-        self._adc = adc if adc is not None else Max1238()
+        self._adc = adc
 
-        self._conversion_config = load_sensor_conversion_config(
-            calibration_path
-        )
-        self._temperature_span = (
-            self._conversion_config.temperature_span
-        )
+        self._conversion_config = load_sensor_conversion_config(calibration_path)
+        self._temperature_span = self._conversion_config.temperature_span
         self._flow_span = self._conversion_config.flow_span
-
-        if initialize_adc:
-            self._adc.setup_adc()
 
     # endregion Initialization
 
@@ -233,36 +253,36 @@ class SensorReader:
 
     # Reads raw ADC counts from ``self._adc`` for the specified ADC ``channel``.
     def get_adc_raw(self, channel: int) -> int:
-        """Read one raw MAX1238 channel.
+        """Read one raw ADC channel.
 
         Args:
-            channel (int): MAX1238 analog input channel number.
+            channel (int): ADC analog input channel number.
 
         Returns:
-            Raw 12-bit ADC result in counts.
+            Raw ADC result in counts.
 
         Raises:
             RuntimeError: If ``self._adc`` returns no reading.
         """
         raw_counts = self._adc.read_single(channel)
         if raw_counts is None:
-            raise RuntimeError(f"MAX1238 returned no value for channel {channel}")
+            raise RuntimeError(f"ADC returned no value for channel {channel}")
 
         return raw_counts
 
     # Reads raw counts from ADC ``channel`` and converts them using ``self._conversion_config``.
     def get_adc_voltage(self, channel: int) -> float:
-        """Read one MAX1238 channel and convert it to volts.
+        """Read one ADC channel and convert it to volts.
 
         Args:
-            channel (int): MAX1238 analog input channel number.
+            channel (int): ADC analog input channel number.
 
         Returns:
             ADC input voltage in volts.
         """
-        channel_counts = self.get_adc_raw(channel)
+        channel_raw_counts = self.get_adc_raw(channel)
         return adc_counts_to_voltage(
-            channel_counts,
+            channel_raw_counts,
             self._conversion_config,
         )
 
@@ -272,7 +292,7 @@ class SensorReader:
 
     # Reads hot-water voltage ``hot_voltage_v`` and converts it with ``_temperature_span``.
     def get_hot_temp_c(self) -> float:
-        """Read the hot-water 4–20 mA transmitter.
+        """Read the hot-water 4-20 mA transmitter.
 
         Returns:
             Hot-water temperature in degrees Celsius.
@@ -289,7 +309,7 @@ class SensorReader:
 
     # Reads cold-water voltage ``cold_voltage_v`` and converts it with ``_temperature_span``.
     def get_cold_temp_c(self) -> float:
-        """Read the cold-water 4–20 mA transmitter.
+        """Read the cold-water 4-20 mA transmitter.
 
         Returns:
             Cold-water temperature in degrees Celsius.
@@ -306,7 +326,7 @@ class SensorReader:
 
     # Reads flow voltage ``flow_voltage_v`` and converts it with ``_flow_span``.
     def get_flow_gpm(self) -> float:
-        """Read the 4–20 mA flow transmitter.
+        """Read the 4-20 mA flow transmitter.
 
         Returns:
             Flow rate in gallons per minute.
@@ -329,45 +349,53 @@ class SensorReader:
             Ambient temperature in degrees Celsius.
         """
         ambient_voltage_v = self.get_adc_voltage(CH_AMBIENT)
-        return lm35_voltage_to_temp_c(
-            ambient_voltage_v,
-        )
+        return lm35_voltage_to_temp_c(ambient_voltage_v)
 
     # endregion Sensor Measurements
 
-    # region Sensor Snapshots
+    # region Grouped Sensor Snapshots
 
     # Reads all active channels into ``channel_counts`` and returns one ``SensorSnapshot``.
     def get_sensor_snapshot(self) -> SensorSnapshot:
         """Read all active sensors into one structured snapshot.
 
         Returns:
-            ``SensorSnapshot`` containing temperature and flow measurements.
+            ``SensorSnapshot`` containing raw counts and converted temperature
+            and flow measurements.
 
         Timing:
-            The ADC (MAX1238) channels are read sequentially during one scan.
+            ADC channels are read sequentially during one scan.
             Measurements are tightly grouped but not physically simultaneous.
         """
         channel_counts = self._adc.read_range(CH_HOT, CH_AMBIENT)
 
+        hot_raw_counts = get_scanned_channel_raw(channel_counts, CH_HOT)
+        cold_raw_counts = get_scanned_channel_raw(channel_counts, CH_COLD)
+        flow_raw_counts = get_scanned_channel_raw(channel_counts, CH_FLOW)
+        ambient_raw_counts = get_scanned_channel_raw(channel_counts, CH_AMBIENT)
+
         hot_voltage_v = adc_counts_to_voltage(
-            channel_counts[CH_HOT],
+            hot_raw_counts,
             self._conversion_config,
         )
         cold_voltage_v = adc_counts_to_voltage(
-            channel_counts[CH_COLD],
+            cold_raw_counts,
             self._conversion_config,
         )
         flow_voltage_v = adc_counts_to_voltage(
-            channel_counts[CH_FLOW],
+            flow_raw_counts,
             self._conversion_config,
         )
         ambient_voltage_v = adc_counts_to_voltage(
-            channel_counts[CH_AMBIENT],
+            ambient_raw_counts,
             self._conversion_config,
         )
 
         return SensorSnapshot(
+            hot_raw_counts=hot_raw_counts,
+            cold_raw_counts=cold_raw_counts,
+            flow_raw_counts=flow_raw_counts,
+            ambient_raw_counts=ambient_raw_counts,
             hot_temp_c=voltage_to_linear_loop_value(
                 hot_voltage_v,
                 self._temperature_span,
@@ -378,9 +406,7 @@ class SensorReader:
                 self._temperature_span,
                 self._conversion_config,
             ),
-            ambient_temp_c=lm35_voltage_to_temp_c(
-                ambient_voltage_v
-            ),
+            ambient_temp_c=lm35_voltage_to_temp_c(ambient_voltage_v),
             flow_gpm=voltage_to_linear_loop_value(
                 flow_voltage_v,
                 self._flow_span,
@@ -388,48 +414,6 @@ class SensorReader:
             ),
         )
 
-    # endregion Sensor Snapshots
-
-    # region Resource Management
-
-    # Closes ADC connection ``self._adc`` only when ownership flag ``self._owns_adc`` is true.
-    def close(self) -> None:
-        """Close the internally owned MAX1238 connection.
-
-        Returns:
-            None.
-
-        Resource notes:
-            Externally supplied ADC instances are not closed.
-        """
-        if self._owns_adc:
-            self._adc.close()
-
-    # Context-management methods allow ``SensorReader`` to be used in a with-statement.
-
-    # Returns this ``SensorReader`` when entering its managed context.
-    def __enter__(self) -> "SensorReader":
-        """Enter a context-managed sensor-reader session.
-
-        Returns:
-            This ``SensorReader`` instance.
-        """
-        return self
-
-    # Receives context exception details and closes owned ``self._adc`` resources.
-    def __exit__(self, exc_type, exc, traceback) -> None:
-        """Close owned hardware resources when leaving a context.
-
-        Args:
-            exc_type: Exception type raised inside the context, when present.
-            exc: Exception instance raised inside the context, when present.
-            traceback: Exception traceback raised inside the context, when present.
-
-        Returns:
-            None. Exceptions are not suppressed.
-        """
-        self.close()
-
-    # endregion Resource Management
+    # endregion Grouped Sensor Snapshots
 
 # endregion Sensor Reader

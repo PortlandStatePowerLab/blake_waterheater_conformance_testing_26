@@ -1,14 +1,14 @@
-"""Pure sensor-configuration models and conversion operations.
+"""Pure sensor-conversion configuration and mathematical operations.
 
-This module defines readable nominal hardware values and the immutable
-``SensorConversionConfig`` used by the active conversion path. Effective ADC
-limits and current-loop sensor spans are derived from that configuration so
-nominal and calibrated operation share one source of truth.
+This module defines the station's nominal electrical and sensor-range values,
+plus the immutable ``SensorConversionConfig`` used by conversion functions.
+Effective ADC limits and current-loop spans are derived from that configuration
+so nominal and calibrated operation share one source of truth.
 
-The conversion functions transform MAX1238 ADC codes into voltage, shunt
-voltage into loop current, linear current-loop signals into sensor values, and
-LM35 voltage into ambient temperature. This module performs no GPIO, I2C, file,
-timing, or printing operations.
+The functions transform ADC counts into voltage, shunt voltage into loop
+current, linear current-loop signals into engineering values, and LM35 voltage
+into ambient temperature. This module performs no hardware access, lifecycle,
+file, timing, or output operations.
 """
 
 # region Imports
@@ -25,13 +25,13 @@ from dataclasses import dataclass
 
 # Nominal MAX1238 and installed signal-path values.
 #
-# These are documented defaults. A loaded calibration file may override them
-# for runtime conversion without modifying these module-level constants.
+# These constants remain unchanged when a caller supplies calibrated values in
+# a separate ``SensorConversionConfig``.
 
 # ADC (MAX1238) datasheet specifies 1 LSB = VREF / 2^N
-ADC_RESOLUTION_BITS = 12                   # 2^12 = 4096 conversion steps (resolution)
+ADC_RESOLUTION_BITS = 12  # 2^12 = 4096 conversion steps (resolution)
 ADC_CODE_COUNT = 1 << ADC_RESOLUTION_BITS  # 4096 conversion steps (conversion divisor)
-ADC_MAX_CODE = ADC_CODE_COUNT - 1          # Highest returned code: 4095 (used to validate retrieved data)
+ADC_MAX_CODE = ADC_CODE_COUNT - 1  # Highest returned code: 4095
 
 NOMINAL_ADC_REFERENCE_V = 4.096
 NOMINAL_SHUNT_OHMS = 120.0
@@ -52,10 +52,10 @@ NOMINAL_FLOW_MAX_GPM = 10.0
 # Packages either nominal or calibrated values in ``SensorConversionConfig``.
 @dataclass(frozen=True)
 class SensorConversionConfig:
-    """Values used by the active sensor-conversion path.
+    """Store electrical and sensor-range values used by conversions.
 
-    Defaults come from documented nominal hardware values. A calibration file
-    may override individual fields while all omitted fields remain nominal.
+    Defaults describe the nominal station signal path. Callers may override
+    individual fields while omitted fields retain their nominal values.
     """
 
     adc_reference_voltage_v: float = NOMINAL_ADC_REFERENCE_V
@@ -80,9 +80,7 @@ class SensorConversionConfig:
                 configuration is invalid.
         """
         if self.adc_reference_voltage_v <= 0.0:
-            raise ValueError(
-                "adc_reference_voltage_v must be greater than zero"
-            )
+            raise ValueError("adc_reference_voltage_v must be greater than zero")
 
         if self.adc_code_count <= 0:
             raise ValueError("adc_code_count must be greater than zero")
@@ -91,19 +89,13 @@ class SensorConversionConfig:
             raise ValueError("shunt_ohms must be greater than zero")
 
         if self.current_loop_max_ma <= self.current_loop_min_ma:
-            raise ValueError(
-                "current_loop_max_ma must exceed current_loop_min_ma"
-            )
+            raise ValueError("current_loop_max_ma must exceed current_loop_min_ma")
 
         if self.temperature_max_c <= self.temperature_min_c:
-            raise ValueError(
-                "temperature_max_c must exceed temperature_min_c"
-            )
+            raise ValueError("temperature_max_c must exceed temperature_min_c")
 
         if self.flow_max_gpm <= self.flow_min_gpm:
-            raise ValueError(
-                "flow_max_gpm must exceed flow_min_gpm"
-            )
+            raise ValueError("flow_max_gpm must exceed flow_min_gpm")
 
     # Derives the highest valid ADC output ``adc_max_code`` from the configured code count ``adc_code_count``.
     @property
@@ -141,9 +133,9 @@ NOMINAL_SENSOR_CONFIG = SensorConversionConfig()
 # Stores the engineering-unit range for a linear current-loop sensor.
 @dataclass(frozen=True)
 class LinearCurrentLoopSpan:
-    """Describe the engineering-unit range of a linear current-loop sensor.
+    """Store the engineering-unit range of a linear current-loop sensor.
 
-    Args:
+    Attributes:
         engineering_min_value: Engineering value represented by minimum current.
         engineering_max_value: Engineering value represented by maximum current.
         units: Engineering-unit label such as ``degC`` or ``gpm``.
@@ -162,14 +154,14 @@ def adc_counts_to_voltage(
     raw_counts: int,
     conversion_config: SensorConversionConfig = NOMINAL_SENSOR_CONFIG,
 ) -> float:
-    """Convert raw MAX1238 raw ADC code to voltage in volts_v.
+    """Convert raw ADC counts to input voltage.
 
     Args:
-        raw_counts (int): Raw 12-bit ADC result, in counts, from the MAX1238 ADC.
-        conversion_config (SensorConversionConfig): Active sensor-conversion values.
+        raw_counts (int): Raw ADC result in counts.
+        conversion_config (SensorConversionConfig): Active conversion values.
 
     Returns:
-        Voltage in volts_v corresponding to the raw ADC counts.
+        Input voltage corresponding to ``raw_counts``.
 
     Raises:
         ValueError: If the configured ADC code count or reference voltage is not
@@ -208,8 +200,8 @@ def voltage_to_loop_current_ma(
         conversion_config (SensorConversionConfig): Active ``SensorConversionConfig`` values.
 
     Returns:
-        Loop current in milliamps corresponding to the measured voltage. Negative calculated
-        current is limited to zero to preserve the current water draw programs behavior.
+        Loop current in milliamps corresponding to the measured voltage.
+        Negative calculated current is limited to zero.
 
     Raises:
         ValueError: If ``conversion_config.shunt_ohms`` is not positive.
@@ -275,14 +267,15 @@ def lm35_voltage_to_temp_c(volts_v: float) -> float:
     """Convert LM35 sensor output voltage to ambient temperature in degrees Celsius.
 
     Args:
-        volts_v (float): Measured voltage from the LM35 sensor in volts_v.
+        volts_v (float): Measured LM35 output voltage in volts.
 
     Returns:
         Temperature in degrees Celsius corresponding to the measured voltage.
 
     Assumptions:
-        The LM35 sensor has a linear response of 10 mV/°C with an offset of 0°C at 0V.
+        The LM35 sensor has a linear response of 10 mV/deg C with an offset of
+        0 deg C at 0 V.
     """
-    return volts_v * 100.0  # Convert volts to °C (10 mV/°C)
+    return volts_v * 100.0  # Convert volts to deg C (10 mV/deg C)
 
 # endregion Conversion Functions
