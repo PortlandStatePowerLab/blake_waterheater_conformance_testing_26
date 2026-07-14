@@ -72,17 +72,22 @@ class SensorCheckTest(unittest.TestCase):
         self.assertNotIn("smbus2", sys.modules)
 
         output = captured_output.getvalue()
-        for field_name in (
-            "hot_raw_counts=1000",
-            "cold_raw_counts=900",
-            "flow_raw_counts=800",
-            "ambient_raw_counts=700",
-            "hot_temp_c=",
-            "cold_temp_c=",
-            "flow_gpm=",
-            "ambient_temp_c=",
+        for report_text in (
+            "Sensor snapshot at ",
+            "Raw ADC counts",
+            "  hot_raw_counts    : 1000 counts",
+            "  cold_raw_counts   : 900 counts",
+            "  flow_raw_counts   : 800 counts",
+            "  ambient_raw_counts: 700 counts",
+            "Converted values",
+            "  hot_temp_c        :",
+            "  cold_temp_c       :",
+            "  flow_gpm          :",
+            "  ambient_temp_c    :",
+            " °C",
+            " GPM",
         ):
-            self.assertIn(field_name, output)
+            self.assertIn(report_text, output)
 
 
 if __name__ == "__main__":

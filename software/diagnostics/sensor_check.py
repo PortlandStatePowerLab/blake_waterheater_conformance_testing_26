@@ -48,15 +48,19 @@ def print_sensor_snapshot(
     timestamp_text = timestamp.astimezone().isoformat(timespec="seconds")
 
     print(
-        f"{timestamp_text} "
-        f"hot_raw_counts={snapshot.hot_raw_counts} "
-        f"cold_raw_counts={snapshot.cold_raw_counts} "
-        f"flow_raw_counts={snapshot.flow_raw_counts} "
-        f"ambient_raw_counts={snapshot.ambient_raw_counts} "
-        f"hot_temp_c={snapshot.hot_temp_c:.3f} "
-        f"cold_temp_c={snapshot.cold_temp_c:.3f} "
-        f"flow_gpm={snapshot.flow_gpm:.3f} "
-        f"ambient_temp_c={snapshot.ambient_temp_c:.3f}"
+        f"Sensor snapshot at {timestamp_text}\n"
+        "\n"
+        "Raw ADC counts\n"
+        f"  {'hot_raw_counts':<18}: {snapshot.hot_raw_counts} counts\n"
+        f"  {'cold_raw_counts':<18}: {snapshot.cold_raw_counts} counts\n"
+        f"  {'flow_raw_counts':<18}: {snapshot.flow_raw_counts} counts\n"
+        f"  {'ambient_raw_counts':<18}: {snapshot.ambient_raw_counts} counts\n"
+        "\n"
+        "Converted values\n"
+        f"  {'hot_temp_c':<18}: {snapshot.hot_temp_c:.3f} °C\n"
+        f"  {'cold_temp_c':<18}: {snapshot.cold_temp_c:.3f} °C\n"
+        f"  {'flow_gpm':<18}: {snapshot.flow_gpm:.3f} GPM\n"
+        f"  {'ambient_temp_c':<18}: {snapshot.ambient_temp_c:.3f} °C"
     )
 
 
@@ -75,6 +79,7 @@ def run_sensor_check(
         if not watch:
             return
 
+        print()
         time.sleep(interval_s)
 
 # endregion Snapshot Reporting
