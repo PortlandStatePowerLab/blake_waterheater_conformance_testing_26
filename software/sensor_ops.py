@@ -18,7 +18,6 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import Protocol
 
 # Station sensor-channel assignments.
 from software.common.hardware_map import (
@@ -36,6 +35,9 @@ from software.sensor_conversion import (
     lm35_voltage_to_temp_c,
     voltage_to_linear_loop_value,
 )
+
+# Shared hardware-agnostic ADC read interface from ``adc_interfaces.py``.
+from software.adc.adc_interfaces import SensorAdc
 
 # endregion Imports
 
@@ -195,26 +197,6 @@ def get_scanned_channel_raw(
     return channel_counts[channel]
 
 # endregion Scanned-Channel Lookup
-
-# region Sensor ADC Interface
-
-# Defines the borrowed ADC read interface required by ``SensorReader``.
-class SensorAdc(Protocol):
-    """Define the ADC read operations required by ``SensorReader``."""
-
-    def read_single(self, channel: int) -> int | None:
-        """Return one ADC channel result in raw counts."""
-        ...
-
-    def read_range(
-        self,
-        first_channel: int,
-        last_channel: int,
-    ) -> dict[int, int]:
-        """Return raw counts for a sequential ADC channel scan."""
-        ...
-
-# endregion Sensor ADC Interface
 
 # region Sensor Reader
 
