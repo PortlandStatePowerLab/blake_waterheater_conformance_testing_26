@@ -18,7 +18,6 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import Protocol
 
 # Station sensor-channel assignments.
 from software.common.hardware_map import (
@@ -34,8 +33,12 @@ from software.sensor_conversion import (
     SensorConversionConfig,
     adc_counts_to_voltage,
     lm35_voltage_to_temp_c,
+    lm35_voltage_to_temp_f,
     voltage_to_linear_loop_value,
 )
+
+# Shared hardware-agnostic ADC read interface from ``adc_interfaces.py``.
+from software.adc.adc_interfaces import SensorAdc
 
 # endregion Imports
 
@@ -142,8 +145,11 @@ class SensorSnapshot:
         flow_raw_counts (int): Raw ADC counts for the flow transmitter.
         ambient_raw_counts (int): Raw ADC counts for the ambient sensor.
         hot_temp_c (float): Hot-water transmitter temperature in degrees Celsius.
+        hot_temp_f (float): Hot-water transmitter temperature in degrees Fahrenheit.
         cold_temp_c (float): Cold-water transmitter temperature in degrees Celsius.
+        cold_temp_f (float): Cold-water transmitter temperature in degrees Fahrenheit.
         ambient_temp_c (float): LM35 ambient temperature in degrees Celsius.
+        ambient_temp_f (float): LM35 ambient temperature in degrees Fahrenheit.
         flow_gpm (float): Flow transmitter reading in gallons per minute.
 
     Timing:
@@ -156,8 +162,11 @@ class SensorSnapshot:
     ambient_raw_counts: int
 
     hot_temp_c: float
+    hot_temp_f: float
     cold_temp_c: float
+    cold_temp_f: float
     ambient_temp_c: float
+    ambient_temp_f: float
     flow_gpm: float
 
 # endregion Sensor Data
@@ -196,26 +205,6 @@ def get_scanned_channel_raw(
 
 # endregion Scanned-Channel Lookup
 
-# region Sensor ADC Interface
-
-# Defines the borrowed ADC read interface required by ``SensorReader``.
-class SensorAdc(Protocol):
-    """Define the ADC read operations required by ``SensorReader``."""
-
-    def read_single(self, channel: int) -> int | None:
-        """Return one ADC channel result in raw counts."""
-        ...
-
-    def read_range(
-        self,
-        first_channel: int,
-        last_channel: int,
-    ) -> dict[int, int]:
-        """Return raw counts for a sequential ADC channel scan."""
-        ...
-
-# endregion Sensor ADC Interface
-
 # region Sensor Reader
 
 # Reads ADC channels with ``SensorReader`` and converts their values into sensor measurements.
@@ -245,6 +234,7 @@ class SensorReader:
 
         self._conversion_config = load_sensor_conversion_config(calibration_path)
         self._temperature_span = self._conversion_config.temperature_span
+        self._temperature_span_f = self._conversion_config.temperature_span_f
         self._flow_span = self._conversion_config.flow_span
 
     # endregion Initialization
@@ -401,12 +391,23 @@ class SensorReader:
                 self._temperature_span,
                 self._conversion_config,
             ),
+            hot_temp_f=voltage_to_linear_loop_value(
+                hot_voltage_v,
+                self._temperature_span_f,
+                self._conversion_config,
+            ),
             cold_temp_c=voltage_to_linear_loop_value(
                 cold_voltage_v,
                 self._temperature_span,
                 self._conversion_config,
             ),
+            cold_temp_f=voltage_to_linear_loop_value(
+                cold_voltage_v,
+                self._temperature_span_f,
+                self._conversion_config,
+            ),
             ambient_temp_c=lm35_voltage_to_temp_c(ambient_voltage_v),
+            ambient_temp_f=lm35_voltage_to_temp_f(ambient_voltage_v),
             flow_gpm=voltage_to_linear_loop_value(
                 flow_voltage_v,
                 self._flow_span,

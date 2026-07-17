@@ -113,6 +113,16 @@ class SensorConversionConfig:
             units="degC",
         )
 
+    # Builds ``temperature_span_f`` from the effective temperature limits.
+    @property
+    def temperature_span_f(self) -> "LinearCurrentLoopSpan":
+        """Return the effective temperature span in degrees Fahrenheit."""
+        return LinearCurrentLoopSpan(
+            engineering_min_value=temp_c_to_temp_f(self.temperature_min_c),
+            engineering_max_value=temp_c_to_temp_f(self.temperature_max_c),
+            units="degF",
+        )
+
     # Builds ``flow_span`` from the effective flow limits.
     @property
     def flow_span(self) -> "LinearCurrentLoopSpan":
@@ -277,5 +287,33 @@ def lm35_voltage_to_temp_c(volts_v: float) -> float:
         0 deg C at 0 V.
     """
     return volts_v * 100.0  # Convert volts to deg C (10 mV/deg C)
+
+# Converts LM35 voltage ``volts_v`` into temperature in degrees Fahrenheit.
+def lm35_voltage_to_temp_f(volts_v: float) -> float:
+    """Convert LM35 sensor output voltage to ambient temperature in degrees Fahrenheit.
+
+    Args:
+        volts_v (float): Measured LM35 output voltage in volts.
+
+    Returns:
+        Temperature in degrees Fahrenheit corresponding to the measured voltage.
+
+    Assumptions:
+        The LM35 sensor has a linear response of 10 mV/deg C with an offset of
+        0 deg C at 0 V, reported here directly in degrees Fahrenheit.
+    """
+    return volts_v * 180.0 + 32.0
+
+# Converts temperature ``temp_c`` from degrees Celsius to degrees Fahrenheit.
+def temp_c_to_temp_f(temp_c: float) -> float:
+    """Convert temperature from degrees Celsius to degrees Fahrenheit.
+
+    Args:
+        temp_c (float): Temperature in degrees Celsius.
+
+    Returns:
+        Temperature in degrees Fahrenheit.
+    """
+    return temp_c * 9.0 / 5.0 + 32.0
 
 # endregion Conversion Functions
