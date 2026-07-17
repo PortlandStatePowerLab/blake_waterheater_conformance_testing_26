@@ -1,8 +1,9 @@
-"""Construct and configure the installed MAX1238 ADC.
+"""Construct the installed MAX1238 with its internal reference and external clock.
 
 This module owns the concrete MAX1238 construction and startup boundary. It opens the
-configured Raspberry Pi I2C bus, applies the station ADC setup, waits for the internal
-reference to become ready, and returns the prepared driver.
+configured Raspberry Pi I2C bus, applies the station ADC setup with the internal 4.096 V
+reference and external conversion clock, waits for the internal reference to become ready,
+and returns the prepared driver.
 
 Higher-level sensor services should depend on the shared ADC interface instead of importing
 this module or the concrete MAX1238 driver.
@@ -63,7 +64,7 @@ def build_max1238(
             propagate to the caller.
 
     Configuration:
-        The station uses the MAX1238 internal 4.096 V reference, internal
+        The station uses the MAX1238 internal 4.096 V reference, external
         conversion clock, unipolar input mode, and single-ended channel reads.
 
     Ownership:
@@ -96,11 +97,11 @@ def build_max1238(
             bus_num=bus_num,
         )
 
-        # Configures the installed ADC explicitly instead of relying on hidden
-        # defaults inside the concrete driver.
+        # Configures the internal 4.096 V reference and external conversion clock
+        # explicitly instead of relying on hidden concrete-driver defaults.
         adc.setup_adc(
             referenceVoltage=ReferenceVoltage.InternalRef_AlwaysON_AnalogIn,
-            clock=ClockType.Internal,
+            clock=ClockType.External,
             polarity=Polarity.Unipolar,
             reset=ResetMode.NoAction,
         )

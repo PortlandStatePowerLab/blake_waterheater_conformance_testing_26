@@ -138,7 +138,7 @@ sample=10 scan_0_to_2_flow=449 scan_0_to_3_flow=440 single_flow=481 delta_single
 Interpretation:
 
 - Both scans read near 440: the problem happens during the AIN0 → AIN1 → AIN2 transition.
-- 0→2 reads near 480 but 0→3 reads near 440: including or reading AIN3 is affecting CH2,pointing toward scan-memory/read-length handling rather than basic CH2 acquisition.
+- 0→2 reads near 480 but 0→3 reads near 440: including or reading AIN3 is affecting CH2, pointing toward scan-memory/read-length handling rather than basic CH2 acquisition.
 - Both read near 480: the earlier test sequence itself exposed another state-dependent interaction.
 
 ## Internal Clock vs. External Clock Timing
@@ -187,29 +187,33 @@ sample=10 external_grouped_flow=476 external_single_flow=481 delta_single_minus_
 
 Interpretation:
 
-Grouped CH2 recovers near 480: internal-clock scan settling/timing is the leading cause.
-Grouped CH2 remains near 440: the issue is not fixed by slower SCL-driven acquisition,
-next inspect the analog buffer/node behavior during mux scanning.
+Grouped CH2 recovered near 480 under external-clock operation. This test showed
+that clock selection changes the grouped-read result, but it did not establish
+the exact analog mechanism.
 
 ## Initial Findings
 
-Known:
+Observed:
 
-- the bad CH2 result is caused by the MAX1238’s internal-clock multichannel acquisition behavior on this installed analog front end.
+- Internal-clock grouped reads showed station-dependent bias in magnitude and
+  direction. External-clock grouped and single reads agreed within ordinary
+  read variation on all four stations.
 
-Leading explanation:
+Qualification:
 
-- CH2 is not settling sufficiently before the internal-clock scan captures it. The MAX1238 uses an input mux and track/hold capacitor, lists an 800 ns acquisition time and 22 pF input capacitance, while external-clock mode makes SCL the conversion clock.
+- The exact analog mechanism remains unknown. Source impedance, op-amp settling,
+  mux settling, and capacitance have not been proven as the root cause.
 
 Still unknown:
 
 - Exactly which board-level detail makes CH2 the sensitive one—LM324 settling, mux charge transfer, source impedance, capacitance, or some combination.
-- We do not need that final microscopic explanation before fixing software configuration because the clock-mode A/B test is extremely clean.
+- The exact microscopic mechanism is not required for the configuration decision
+  because the four-station clock-mode A/B result is clear.
 
-Follow up ruleset:
+Completed follow-up:
 
-We should not change the builder yet until the complete grouped SensorReader snapshot
-is proven under external clock
+WH1 through WH4 have now been tested in both clock modes. External-clock grouped
+snapshots passed on every station, so the shared builder can use external clock.
 
 ## External-Clock Snapshot
 
@@ -283,6 +287,27 @@ Expected result:
 
 - CH2 should stay around 0.475–0.485 V / 475–485 counts and the grouped flow should land close to 0 GPM instead of roughly −0.22 GPM.
 
+## Four-Station Clock Comparison
+
+Delta is single minus grouped for Sequences A and B. Sequence C is the second
+single read minus the first single read.
+
+| Station | Internal-clock result | External-clock result | External snapshot |
+| --- | --- | --- | --- |
+| WH1 | Grouped flow was about 40 counts lower than single. | Grouped and single agreed within about 1 count. | Passed. |
+| WH2 | A: grouped 489.70, single 482.20, delta -7.50. B: grouped 491.50, single 483.00, delta -8.50. C delta -0.50. | A delta +0.10. B delta -0.80. C delta +1.00. | Passed for connected hot, flow, and ambient channels. |
+| WH3 | A: grouped 486.60, single 477.20, delta -9.40. B: grouped 485.00, single 477.40, delta -7.60. C delta +0.10. | A delta +0.50. B delta -0.90. C delta +1.50. | Passed for connected hot, flow, and ambient channels. |
+| WH4 | A: grouped 494.80, single 482.70, delta -12.10. B: grouped 494.30, single 483.30, delta -11.00. C delta +0.50. | A delta +1.60. B delta -0.50. C delta +0.70. | Passed: hot 1186-1188 counts (23.54-23.75 C), flow 480-485 counts (0.000-0.026 GPM), ambient 279-280 counts (27.9-28.0 C). |
+
+The internal-clock grouped-read bias was station-dependent in magnitude and
+direction. External clock made grouped and single reads agree within ordinary
+read variation on all four stations. WH1 also passed a full external-clock
+sensor snapshot.
+
+WH2, WH3, and WH4 do not have local cold-water sensors. Their disconnected
+local cold inputs and approximately -99 C conversions are not hardware failures.
+Shared cold-water data from WH1 uses a separate path and will be tested later.
+
 ## Secondary Findings
 
 With external clock:
@@ -290,17 +315,19 @@ With external clock:
 - Grouped CH2: 476–482 counts
 - Equivalent input: 0.476–0.482 V
 - Converted flow: −0.021 to +0.010 GPM
-- Hot, cold, and ambient remained plausible
+- On WH1, hot, cold, and ambient remained plausible. On WH2-WH4, the physically
+  connected hot, flow, and ambient channels remained plausible.
 - The former grouped result around 440 counts / −0.22 GPM is gone
 
-## Proven Thus Far
+## Proven Across All Four Stations
 
-- Internal-clock multichannel scanning produces the CH2 error on this board.
-- External-clock operation removes it.
+- Internal-clock grouped-read bias varied by station in magnitude and direction.
+- External-clock grouped and single reads agreed within ordinary read variation.
 - This is not a calibration offset.
 - We still do not clamp the tiny near-zero negative flow readings.
 
 ## Resulting Action
 
-Promoting external clock operation into the station MAX1238 builder to make
-acquisition diagnostic more accurate
+Use `ClockType.External` as the common shared-builder configuration. External
+conversion clock operation uses the existing I2C SCL signal; no additional
+physical clock wire is required.
