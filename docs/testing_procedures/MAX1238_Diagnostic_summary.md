@@ -1,13 +1,15 @@
-#Diagnostic Tests for the 40 bit delta for CH2 on the MAX1238
-"""
----
-MAX1238’s repeat-selected-channel scan mode. 
-- The chip performs scan conversions successively using an
-800 ns track/hold acquisition interval and a 22 pF input capacitance,
-then returns results FIFO
----
-"""
+<!-- markdownlint-configure-file { "MD046": { "style": "fenced" } } -->
 
+# Diagnostic Tests for the 40-Count Delta on MAX1238 CH2
+
+---
+MAX1238’s repeat-selected-channel scan mode:
+
+- The chip performs scan conversions successively using an 800 ns track/hold acquisition interval and a 22 pF input capacitance, then returns results FIFO
+
+---
+
+```python
 import time
 
 from software.adc.max1238_builder import build_max1238
@@ -41,12 +43,14 @@ try:
             f"repeat8={repeated_counts} "
             f"single_after={single_after_counts}"
         )
-
         time.sleep(0.10)
 finally:
     adc.close()
-#OUTPUTS
-"""
+```
+
+## Repeat-Selected-Channel Scan Outputs
+
+```text
 sample=01 single_before=480 repeat8=[477, 492, 496, 494, 490, 491, 492, 492] single_after=483
 sample=02 single_before=481 repeat8=[479, 495, 495, 491, 490, 493, 493, 491] single_after=478
 sample=03 single_before=480 repeat8=[478, 490, 494, 494, 493, 490, 492, 494] single_after=483
@@ -57,21 +61,24 @@ sample=07 single_before=481 repeat8=[480, 492, 496, 494, 490, 493, 495, 492] sin
 sample=08 single_before=480 repeat8=[477, 495, 494, 489, 492, 495, 494, 490] single_after=477
 sample=09 single_before=479 repeat8=[481, 494, 492, 491, 493, 493, 494, 491] single_after=482
 sample=10 single_before=476 repeat8=[478, 495, 494, 490, 492, 496, 492, 491] single_after=476
-"""
-"""
+```
+
 Interpretation:
 
 - First repeat low, later repeats recover toward 480: track/hold or input-settling behavior.
 - All eight repeats near 480: likely interaction from scanning CH0 → CH1 → CH2.
 - All eight repeats near 440: likely a broader scan-mode or transaction behavior.
-"""
-"""
----
-Next determine whether CH2 goes low:
-- whenever scanning AIN0 → AIN2, 
+
+## Determine When CH2 Goes Low
+
+Next, determine whether CH2 goes low:
+
+- whenever scanning AIN0 → AIN2,
 - or only when the scan continues through AIN3.
+
 ---
-"""
+
+```python
 import time
 
 from software.adc.max1238_builder import build_max1238
@@ -111,8 +118,11 @@ try:
         time.sleep(0.10)
 finally:
     adc.close()
-#OUTPUTS
-"""
+```
+
+## CH2-Low Outputs
+
+```text
 sample=01 scan_0_to_2_flow=450 scan_0_to_3_flow=444 single_flow=477 delta_single_minus_0_to_2=27 delta_single_minus_0_to_3=33
 sample=02 scan_0_to_2_flow=445 scan_0_to_3_flow=443 single_flow=481 delta_single_minus_0_to_2=36 delta_single_minus_0_to_3=38
 sample=03 scan_0_to_2_flow=445 scan_0_to_3_flow=443 single_flow=477 delta_single_minus_0_to_2=32 delta_single_minus_0_to_3=34
@@ -123,20 +133,21 @@ sample=07 scan_0_to_2_flow=446 scan_0_to_3_flow=443 single_flow=481 delta_single
 sample=08 scan_0_to_2_flow=445 scan_0_to_3_flow=440 single_flow=483 delta_single_minus_0_to_2=38 delta_single_minus_0_to_3=43
 sample=09 scan_0_to_2_flow=445 scan_0_to_3_flow=442 single_flow=478 delta_single_minus_0_to_2=33 delta_single_minus_0_to_3=36
 sample=10 scan_0_to_2_flow=449 scan_0_to_3_flow=440 single_flow=481 delta_single_minus_0_to_2=32 delta_single_minus_0_to_3=41
-"""
-"""	
+```
+
 Interpretation:
 
 - Both scans read near 440: the problem happens during the AIN0 → AIN1 → AIN2 transition.
-- 0→2 reads near 480 but 0→3 reads near 440: including or reading AIN3 is affecting CH2, 
-pointing toward scan-memory/read-length handling rather than basic CH2 acquisition.
+- 0→2 reads near 480 but 0→3 reads near 440: including or reading AIN3 is affecting CH2,pointing toward scan-memory/read-length handling rather than basic CH2 acquisition.
 - Both read near 480: the earlier test sequence itself exposed another state-dependent interaction.
-"""
-"""
+
+## Internal Clock vs. External Clock Timing
+
+Next, check the internal-clock scan versus the external-clock scan.
+
 ---
-Next check the internal-clock scan versus external-clock scan
----
-"""
+
+```python
 import time
 
 from software.adc.max1238_builder import build_max1238
@@ -157,8 +168,11 @@ try:
         polarity=Polarity.Unipolar,
         reset=ResetMode.NoAction,
     )
-#OUTPUTS
-"""
+```
+
+## Clock-Timing Outputs
+
+```text
 sample=01 external_grouped_flow=481 external_single_flow=476 delta_single_minus_grouped=-5
 sample=02 external_grouped_flow=476 external_single_flow=475 delta_single_minus_grouped=-1
 sample=03 external_grouped_flow=479 external_single_flow=479 delta_single_minus_grouped=0
@@ -169,36 +183,41 @@ sample=07 external_grouped_flow=484 external_single_flow=478 delta_single_minus_
 sample=08 external_grouped_flow=477 external_single_flow=479 delta_single_minus_grouped=2
 sample=09 external_grouped_flow=476 external_single_flow=477 delta_single_minus_grouped=1
 sample=10 external_grouped_flow=476 external_single_flow=481 delta_single_minus_grouped=5
-"""
-"""	
+```
+
 Interpretation:
 
 Grouped CH2 recovers near 480: internal-clock scan settling/timing is the leading cause.
-Grouped CH2 remains near 440: the issue is not fixed by slower SCL-driven acquisition, 
+Grouped CH2 remains near 440: the issue is not fixed by slower SCL-driven acquisition,
 next inspect the analog buffer/node behavior during mux scanning.
-"""
-#FINDING
-"""
-Known: the bad CH2 result is caused by the MAX1238’s internal-clock multichannel acquisition
-behavior on this installed analog front end.
 
-Leading explanation: CH2 is not settling sufficiently before the internal-clock scan captures it.
-The MAX1238 uses an input mux and track/hold capacitor, lists an 800 ns acquisition time and 22 pF input
-capacitance, while external-clock mode makes SCL the conversion clock.
+## Initial Findings
+
+Known:
+
+- the bad CH2 result is caused by the MAX1238’s internal-clock multichannel acquisition behavior on this installed analog front end.
+
+Leading explanation:
+
+- CH2 is not settling sufficiently before the internal-clock scan captures it. The MAX1238 uses an input mux and track/hold capacitor, lists an 800 ns acquisition time and 22 pF input capacitance, while external-clock mode makes SCL the conversion clock.
 
 Still unknown:
-- Exactly which board-level detail makes CH2 the sensitive one—LM324 settling,
-mux charge transfer, source impedance, capacitance, or some combination. 
-- We do not need that final microscopic explanation before fixing software configuration,
-because the clock-mode A/B test is extremely clean.
+
+- Exactly which board-level detail makes CH2 the sensitive one—LM324 settling, mux charge transfer, source impedance, capacitance, or some combination.
+- We do not need that final microscopic explanation before fixing software configuration because the clock-mode A/B test is extremely clean.
 
 Follow up ruleset:
+
 We should not change the builder yet until the complete grouped SensorReader snapshot
 is proven under external clock
-"""
+
+## External-Clock Snapshot
+
+Next, check the grouped snapshot under external clock.
+
 ---
-Next check groupset snapshot under external clock
----
+
+```python
 import time
 
 from software.adc.max1238_builder import build_max1238
@@ -243,8 +262,11 @@ try:
 
 finally:
     adc.close()
-#OUTPUTS
-"""
+```
+
+## External-Clock Snapshot Outputs
+
+```text
 sample=01 hot_raw=1142 cold_raw=1149 flow_raw=481 ambient_raw=224 hot_c=18.96 cold_c=19.69 flow_gpm=0.005 ambient_c=22.40
 sample=02 hot_raw=1144 cold_raw=1145 flow_raw=480 ambient_raw=228 hot_c=19.17 cold_c=19.27 flow_gpm=0.000 ambient_c=22.80
 sample=03 hot_raw=1140 cold_raw=1148 flow_raw=482 ambient_raw=229 hot_c=18.75 cold_c=19.58 flow_gpm=0.010 ambient_c=22.90
@@ -255,13 +277,14 @@ sample=07 hot_raw=1138 cold_raw=1147 flow_raw=476 ambient_raw=226 hot_c=18.54 co
 sample=08 hot_raw=1140 cold_raw=1148 flow_raw=482 ambient_raw=228 hot_c=18.75 cold_c=19.58 flow_gpm=0.010 ambient_c=22.80
 sample=09 hot_raw=1142 cold_raw=1147 flow_raw=480 ambient_raw=231 hot_c=18.96 cold_c=19.48 flow_gpm=0.000 ambient_c=23.10
 sample=10 hot_raw=1149 cold_raw=1145 flow_raw=481 ambient_raw=230 hot_c=19.69 cold_c=19.27 flow_gpm=0.005 ambient_c=23.00
-"""
-"""
-Expected result: CH2 should stay around 0.475–0.485 V / 475–485 counts
-and the grouped flow should land close to 0 GPM instead of roughly −0.22 GPM.
-"""
-#FINDING
-"""
+```
+
+Expected result:
+
+- CH2 should stay around 0.475–0.485 V / 475–485 counts and the grouped flow should land close to 0 GPM instead of roughly −0.22 GPM.
+
+## Secondary Findings
+
 With external clock:
 
 - Grouped CH2: 476–482 counts
@@ -269,14 +292,15 @@ With external clock:
 - Converted flow: −0.021 to +0.010 GPM
 - Hot, cold, and ambient remained plausible
 - The former grouped result around 440 counts / −0.22 GPM is gone
-"""
-#PROVEN
-"""
+
+## Proven Thus Far
+
 - Internal-clock multichannel scanning produces the CH2 error on this board.
 - External-clock operation removes it.
 - This is not a calibration offset.
 - We still do not clamp the tiny near-zero negative flow readings.
-"""
-#RESULT
-##Promoting external clock operation into the station MAX1238 builder to make 
-##acquisition diagnostic more accurate
+
+## Resulting Action
+
+Promoting external clock operation into the station MAX1238 builder to make
+acquisition diagnostic more accurate
