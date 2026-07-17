@@ -331,3 +331,52 @@ With external clock:
 Use `ClockType.External` as the common shared-builder configuration. External
 conversion clock operation uses the existing I2C SCL signal; no additional
 physical clock wire is required.
+
+## Post-Change Shared-Builder Verification
+
+Commit `3cc4855` was pulled onto WH1 through WH4 and verified through the normal
+shared-builder path.
+
+### Software Verification
+
+- All four stations were at commit `3cc4855`.
+- Each station passed `python3 -m compileall -q software tests`.
+- Each station passed
+  `python3 -m unittest -v tests.test_max1238_builder tests.test_compare_adc_acquisition`.
+- Each station ran all 7 tests successfully.
+- All four working trees were clean against
+  `origin/refactor/max1238-builder-boundary`.
+
+### Runtime Verification
+
+The verification script called `build_max1238()` directly. It did not manually
+call `setup_adc()` or override the clock mode, so the live reads directly
+verified the shared builder's `ClockType.External` configuration. The test was
+ADC-only and read-only; it did not access valve GPIO or the ACS37800.
+
+| Station | Hot | Cold | Flow | Ambient | Result |
+| --- | --- | --- | --- | --- | --- |
+| WH1 | 1200 counts, 25.00 C | 1180 counts, 22.92 C | 483 counts, 0.016 GPM | 238 counts, 23.80 C | Full local snapshot passed. |
+| WH2 | 1185 counts, 23.44 C | Local channel disconnected: 3 counts, -99.69 C | 484 counts, 0.021 GPM | 242 counts, 24.20 C | Connected hot, flow, and ambient channels passed. |
+| WH3 | 1178 counts, 22.71 C | Local channel disconnected: 2 counts, -99.79 C | 476 counts, -0.021 GPM | 235 counts, 23.50 C | Connected hot, flow, and ambient channels passed. |
+| WH4 | 1188 counts, 23.75 C | Local channel disconnected: 2 counts, -99.79 C | 482 counts, 0.010 GPM | 281 counts, 28.10 C | Connected hot, flow, and ambient channels passed. |
+
+### Qualification
+
+- WH2 through WH4 intentionally do not have local cold-water sensors. Their
+  approximately -99 C local cold conversions are expected disconnected-input
+  results, not failures.
+- WH3's -0.021 GPM result is ordinary near-zero baseline variation and does not
+  justify a clamp or calibration offset.
+- WH4 ambient was warmer than the other stations but stable and plausible for
+  its local environment.
+- Shared cold-water delivery from WH1 is a separate data path and remains future
+  work.
+
+### Conclusion
+
+- External clock corrected the grouped acquisition disagreement across all four
+  stations.
+- The shared builder now uses `ClockType.External`.
+- Pure tests and live normal-builder snapshots passed on all four stations.
+- The MAX1238 builder-boundary work is complete and ready for merge.
