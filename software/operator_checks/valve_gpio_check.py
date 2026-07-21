@@ -21,7 +21,7 @@ from pathlib import Path
 
 # Resolve the project root from this file location.
 # This file is expected to live under something like:
-#   software/diagnostics/valve_gpio_check.py
+#   software/operator_checks/valve_gpio_check.py
 # parents[2] walks up to the repository root so imports work even when the
 # script is launched directly.
 PROJECT_ROOT = Path(__file__).resolve().parents[2]

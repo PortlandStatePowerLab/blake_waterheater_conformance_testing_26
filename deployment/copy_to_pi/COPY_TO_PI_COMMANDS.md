@@ -20,7 +20,7 @@ ssh $PI "mkdir -p $DEST"
 Create runtime subdirectories:
 
 ```powershell
-ssh $PI "mkdir -p $DEST/software/common $DEST/software/adc $DEST/software/diagnostics $DEST/software/water_draw"
+ssh $PI "mkdir -p $DEST/software/common $DEST/software/adc $DEST/software/operator_checks $DEST/software/water_draw"
 ```
 
 Copy only the deploy manifest runtime payload:
@@ -32,10 +32,10 @@ scp "$STAGE\software\common\__init__.py" "${PI}:$DEST/software/common/"
 scp "$STAGE\software\common\hardware_map.py" "${PI}:$DEST/software/common/"
 scp "$STAGE\software\adc\__init__.py" "${PI}:$DEST/software/adc/"
 scp "$STAGE\software\adc\max1238.py" "${PI}:$DEST/software/adc/"
-scp "$STAGE\software\diagnostics\__init__.py" "${PI}:$DEST/software/diagnostics/"
-scp "$STAGE\software\diagnostics\read_adc_raw.py" "${PI}:$DEST/software/diagnostics/"
-scp "$STAGE\software\diagnostics\read_acs37800_once.py" "${PI}:$DEST/software/diagnostics/"
-scp "$STAGE\software\diagnostics\valve_gpio_check.py" "${PI}:$DEST/software/diagnostics/"
+scp "$STAGE\software\operator_checks\__init__.py" "${PI}:$DEST/software/operator_checks/"
+scp "$STAGE\software\operator_checks\read_adc_raw.py" "${PI}:$DEST/software/operator_checks/"
+scp "$STAGE\software\operator_checks\read_acs37800_once.py" "${PI}:$DEST/software/operator_checks/"
+scp "$STAGE\software\operator_checks\valve_gpio_check.py" "${PI}:$DEST/software/operator_checks/"
 scp "$STAGE\software\water_draw\__init__.py" "${PI}:$DEST/software/water_draw/"
 scp "$STAGE\software\water_draw\whs.py" "${PI}:$DEST/software/water_draw/"
 scp "$STAGE\DEPLOY_MANIFEST.md" "${PI}:$DEST/"

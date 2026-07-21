@@ -30,18 +30,15 @@ The following review gates have been completed and moved into verification recor
 ### Software and data checks
 
 - Confirm correct schedule CSVs before re-enabling any scheduled draw workflow.
-- Confirm flow transmitter calibration and gallons-per-minute scaling.
-- Confirm temperature transmitter scaling and cold/hot channel readings on CH1 and CH0.
-- Keep ADC channel constants sourced from `software/common/hardware_map.py`.
-- Verify ACS37800 register map, scaling, and usable software reads before replacing the safe placeholder diagnostic.
+- Confirm flow-transmitter calibration, gallons-per-minute scaling, and plausible
+  ADC values during a controlled water-draw setup.
+- Confirm temperature-transmitter scaling and plausible hot/cold readings on CH0
+  and CH1 during a controlled water-draw setup.
+- Verify ACS37800 register map, scaling, and usable software reads before replacing
+  the safe placeholder operator check.
 
-### Controlled-output checks
+### Controlled-output check
 
-- `software/diagnostics/valve_gpio_check.py --enable-output` may be used only after confirming the completed valve relay verification record.
-- `software/water_draw/whs.py --enable-output` still requires ADC values, flow scaling, temperature scaling, and stop behavior to be reviewed on the real station before routine use.
-
-## Documents
-
-- Treat Word documents in `docs/reference_only/` as historical unless no better source exists.
-- Audit reports and crash recovery notes may mention stale script behavior; do not use them as deployment instructions.
-- Resolve, supersede, or archive any stale source document or CAD metadata that still names `MAX1239`.
+- Verify `software/water_draw/whs.py --enable-output` stop behavior during a
+  controlled lab run before routine use. The relay-specific verification gate is
+  already complete.

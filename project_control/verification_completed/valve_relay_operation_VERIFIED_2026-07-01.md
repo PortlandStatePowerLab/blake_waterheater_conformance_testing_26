@@ -17,13 +17,24 @@ This record captures completed verification for the WH1 valve relay GPIO output 
 
 ## Notes
 
-The valve GPIO diagnostic remains dry-run by default. Hardware output still requires the explicit `--enable-output` flag.
+The valve operator check at
+`software/operator_checks/valve_gpio_check.py` remains dry-run by default.
+Hardware output still requires the explicit `--enable-output` flag.
 
-This verification clears the relay-specific review gate, but full water-draw operation still requires ADC values, flow scaling, temperature scaling, and stop behavior to be reviewed on the real station.
+This verification clears the relay-specific review gate. Full water-draw operation
+still requires the consolidated calibration and controlled-run checks listed in
+`project_control/review_pending/open_review_items.md`.
+
+The matching relay and flyback-diode datasheets are now stored as
+`hardware/datasheets/RL1_G5LE-1A4_DC24_valve_relay.pdf` and
+`hardware/datasheets/D2_1N4007W_flyback_diode.pdf`. Repository paths reviewed and
+updated 2026-07-20.
 
 ## Remaining related review items
 
-- Confirm ADC values are plausible during real water-draw setup.
-- Confirm flow transmitter calibration and gallons-per-minute scaling.
-- Confirm temperature transmitter scaling and hot/cold channel readings.
-- Confirm `software/water_draw/whs.py --enable-output` stop behavior before routine use.
+- Verify flow-transmitter calibration, scaling, and plausible readings during a
+  controlled water-draw setup.
+- Verify temperature-transmitter scaling and plausible hot/cold readings during a
+  controlled water-draw setup.
+- Verify `software/water_draw/whs.py --enable-output` stop behavior during a
+  controlled lab run before routine use.

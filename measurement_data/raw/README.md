@@ -1,4 +1,4 @@
-# data/raw
+# Measurement data: raw
 
 Large raw experiment captures and station output files.
 

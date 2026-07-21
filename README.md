@@ -52,7 +52,6 @@ Only files listed in `DEPLOY_MANIFEST.md` are intended to be copied to the Raspb
 ├── hardware/
 │   ├── bom/
 │   ├── datasheets/
-│   ├── hardware_map/
 │   ├── pcb/
 │   └── schematics/
 ├── legacy_deprecated/
@@ -65,10 +64,13 @@ Only files listed in `DEPLOY_MANIFEST.md` are intended to be copied to the Raspb
 ├── software/
 │   ├── adc/
 │   ├── common/
-│   ├── diagnostics/
+│   ├── entrypoints/
+│   ├── helpers/
+│   ├── operator_checks/
 │   ├── power_monitoring/
 │   ├── rs485_cta2045/
-│   ├── valve_control/
+│   ├── services/
+│   ├── valve/
 │   └── water_draw/
 └── source_archive_index/
 ```
@@ -77,7 +79,7 @@ Only files listed in `DEPLOY_MANIFEST.md` are intended to be copied to the Raspb
 - deployment/ -- Copy to Pi notes, Pi setup notes, systemd service notes, and first test-run order.
 - docs/ -- active project documents, wiring notes, testing procedures, audit reports, and reference-only documents
 - hardware/ -- BOM material, datasheets, hardware maps, PCB files, and schematics
-- software/ -- active staged Python code for ADC, diagnostics, valve control, power monitoring, RS-485/CTA-2045, and water draw control
+- software/ -- active staged Python code organized by subsystem and explicit component role
 - legacy_deprecated/ -- old, duplicate, generated, broken, or deprecated scripts kept only for reference.
 - source_archive_index/ -- sourced indexes, audit indexes, and search/reference tracking
 
@@ -96,7 +98,7 @@ Only files listed in `DEPLOY_MANIFEST.md` are intended to be copied to the Raspb
 - [Staging Changelog](./CHANGELOG_STAGING.md)
 - [Deployment Notes](./deployment/)
 - [Software](./software/)
-- [Diagnostics](./software/diagnostics/)
+- [Operator checks](./software/operator_checks/)
 - [Hardware References](./hardware/)
 - [Wiring Documentation](./docs/wiring/)
 - [Testing Procedures](./docs/testing_procedures/)

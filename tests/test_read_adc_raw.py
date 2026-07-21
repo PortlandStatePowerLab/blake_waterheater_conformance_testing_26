@@ -8,7 +8,7 @@ import sys
 import unittest
 from unittest.mock import patch
 
-from software.diagnostics import read_adc_raw
+from software.operator_checks import read_adc_raw
 
 
 class FakeAdc:

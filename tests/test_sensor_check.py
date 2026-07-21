@@ -14,7 +14,7 @@ from software.common.hardware_map import (
     CH_FLOW,
     CH_HOT,
 )
-from software.diagnostics import sensor_check
+from software.operator_checks import sensor_check
 
 
 class FakeAdc:

@@ -5,4 +5,4 @@ set -euo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPOSITORY_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 
-exec python3 "${REPOSITORY_ROOT}/software/diagnostics/compare_adc_acquisition.py" "$@"
+exec python3 "${REPOSITORY_ROOT}/software/operator_checks/compare_adc_acquisition.py" "$@"

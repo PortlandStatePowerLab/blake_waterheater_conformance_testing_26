@@ -18,8 +18,14 @@ This record captures completed GPIO and signal-mapping checks from the WH1 stagi
 
 GPIO17 is the valve relay control path through the ribbon cable.
 
+The active software source of truth for these assignments is
+`software/common/hardware_map.py`. The human-readable wiring references remain
+under `docs/wiring/`; no duplicate `hardware/hardware_map/` folder is retained.
+
 The ACS37800 physical DIO-to-GPIO mapping is verified, but ACS37800 register-map use,
     scaling, and software reads remain pending until separately reviewed.
+
+Repository paths reviewed and updated 2026-07-20.
 
 ## Remaining related review items
 

@@ -1,5 +1,7 @@
 # Water Heater Data Plate Information
+
 ## American Standard
+
 - Serial Number: 405700102241770001038
 - Model Number: ASHPWH - 50
 - Manufacture Date: 06/2024
@@ -23,4 +25,5 @@
 - Maximum Working Pressure: 150 psi
 
 ## Rheem
-- 
+
+-

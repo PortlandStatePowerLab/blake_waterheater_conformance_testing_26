@@ -1,4 +1,4 @@
-# data/combined
+# Measurement data: combined
 
 Combined or merged CSV outputs.
 

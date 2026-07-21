@@ -12,17 +12,17 @@ venv/
 env/
 
 # Generated runtime outputs
-logs/*
-!logs/README.md
+runtime_logs/*
+!runtime_logs/README.md
 
-data/generated/*
-!data/generated/README.md
+measurement_data/generated/*
+!measurement_data/generated/README.md
 
-data/raw/*
-!data/raw/README.md
+measurement_data/raw/*
+!measurement_data/raw/README.md
 
-data/combined/*
-!data/combined/README.md
+measurement_data/combined/*
+!measurement_data/combined/README.md
 
-outputs/*
-!outputs/README.md
+generated_results/*
+!generated_results/README.md

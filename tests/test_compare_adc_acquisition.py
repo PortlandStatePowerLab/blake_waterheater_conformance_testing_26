@@ -10,7 +10,7 @@ import unittest
 from enum import Enum
 from unittest.mock import patch
 
-from software.diagnostics import compare_adc_acquisition
+from software.operator_checks import compare_adc_acquisition
 
 
 class FakeAdc:

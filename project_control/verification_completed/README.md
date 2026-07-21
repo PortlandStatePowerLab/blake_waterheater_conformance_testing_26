@@ -24,3 +24,8 @@ Completed verification records should explain:
 - What related review items remain open
 
 Do not use this folder for unresolved tasks. Open items belong in `../review_pending/`.
+
+When repository paths or normalized hardware-document names change, update the
+affected record without changing its original verification date or claiming a
+new physical verification. Add a dated repository-review note to distinguish the
+documentation update from the original lab check.
