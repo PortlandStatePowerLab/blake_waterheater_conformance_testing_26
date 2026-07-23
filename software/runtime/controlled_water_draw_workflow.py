@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import time
 from collections.abc import Callable
+from typing import Protocol
 
-from software.sensors.sensor_reader import SensorReader
+from software.sensors.sensor_reader import SensorSnapshot
 from software.valve.valve_interface import Valve
 
 MAX_RUN_MINUTES = 5.0
@@ -14,10 +15,18 @@ LOW_FLOW_TIMEOUT_S = 20.0
 PRINT_PERIOD_S = 0.5
 
 
+class SensorSnapshotReader(Protocol):
+    """Define the grouped sensor-read operation required by the draw workflow"""
+
+    def get_sensor_snapshot(self) -> SensorSnapshot:
+        """Return one grouped temperature and flow snapshot"""
+        ...
+
+
 def run_controlled_water_draw(
     target_volume_gal: float,
     *,
-    sensor_reader: SensorReader,
+    sensor_reader: SensorSnapshotReader,
     valve: Valve,
     max_run_minutes: float = MAX_RUN_MINUTES,
     monotonic: Callable[[], float] = time.monotonic,
@@ -36,10 +45,10 @@ def run_controlled_water_draw(
     last_log = start
     low_flow_start: float | None = None
 
-    valve.open()
-    print("Valve command asserted")
-
     try:
+        valve.open()
+        print("Valve command asserted")
+
         while volume_gal < target_volume_gal:
             now = monotonic()
             elapsed_s = now - start
