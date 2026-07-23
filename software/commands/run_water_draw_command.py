@@ -18,11 +18,6 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run one controlled WH1 water draw")
     parser.add_argument("--target-gal", type=float, required=True)
     parser.add_argument("--max-run-minutes", type=float, default=MAX_RUN_MINUTES)
-    parser.add_argument(
-        "--enable-output",
-        action="store_true",
-        help="open station hardware; dry-run by default",
-    )
     return parser.parse_args(argv)
 
 
@@ -33,14 +28,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.max_run_minutes <= 0.0:
         raise SystemExit("--max-run-minutes must be greater than zero")
 
-    if not args.enable_output:
-        print(f"Target: {args.target_gal:.3f} gal")
-        print("[DRY-RUN] Valve output is disabled.")
-        print("No ADC bus was opened and no GPIO output was configured.")
-        return 0
-
     adc = build_max1238()
     valve = None
+    workflow_error: BaseException | None = None
     try:
         valve = build_gpio_valve()
         run_controlled_water_draw(
@@ -49,10 +39,34 @@ def main(argv: Sequence[str] | None = None) -> int:
             valve=valve,
             max_run_minutes=args.max_run_minutes,
         )
+    except BaseException as error:
+        workflow_error = error
+        raise
     finally:
-        if valve is not None:
-            valve.cleanup()
-        adc.close()
+        cleanup_error = workflow_error
+        try:
+            if valve is not None:
+                valve.cleanup()
+        except BaseException as valve_cleanup_error:
+            if cleanup_error is None:
+                cleanup_error = valve_cleanup_error
+            else:
+                cleanup_error.add_note(
+                    f"Valve cleanup also failed: {valve_cleanup_error!r}"
+                )
+
+        try:
+            adc.close()
+        except BaseException as adc_close_error:
+            if cleanup_error is None:
+                cleanup_error = adc_close_error
+            else:
+                cleanup_error.add_note(
+                    f"ADC close also failed: {adc_close_error!r}"
+                )
+
+        if workflow_error is None and cleanup_error is not None:
+            raise cleanup_error
     return 0
 
 

@@ -75,6 +75,94 @@ class GpioValveDriverTest(unittest.TestCase):
 
         self.assertEqual(len(self.gpio.output_calls), output_call_count)
 
+    def test_cleanup_failure_leaves_driver_retryable(self) -> None:
+        """Retry GPIO release without issuing another physical LOW command."""
+        cleanup_error = RuntimeError("GPIO cleanup failed")
+        original_cleanup = self.gpio.cleanup
+        cleanup_attempts = 0
+
+        def fail_first_cleanup(pin: int) -> None:
+            """Fail the first release attempt and record a later successful one."""
+            nonlocal cleanup_attempts
+            cleanup_attempts += 1
+            if cleanup_attempts == 1:
+                raise cleanup_error
+            original_cleanup(pin)
+
+        self.gpio.cleanup = fail_first_cleanup
+
+        with self.assertRaises(RuntimeError) as raised:
+            self.valve.cleanup()
+        self.valve.cleanup()
+
+        self.assertIs(raised.exception, cleanup_error)
+        self.assertEqual(cleanup_attempts, 2)
+        self.assertEqual(
+            self.gpio.output_calls,
+            [(self.pin, self.gpio.LOW)],
+        )
+        self.assertEqual(self.gpio.cleanup_calls, [self.pin])
+        self.assertTrue(self.valve._commands_disabled)
+        self.assertTrue(self.valve._cleanup_complete)
+
+    def test_cleanup_failure_disables_open_and_close(self) -> None:
+        """Reject later commands without issuing additional GPIO writes."""
+        cleanup_error = RuntimeError("GPIO cleanup failed")
+
+        def fail_cleanup(pin: int) -> None:
+            """Raise the configured GPIO release failure."""
+            raise cleanup_error
+
+        self.gpio.cleanup = fail_cleanup
+
+        with self.assertRaises(RuntimeError):
+            self.valve.cleanup()
+
+        output_calls_after_cleanup = list(self.gpio.output_calls)
+        with self.assertRaises(RuntimeError):
+            self.valve.open()
+        with self.assertRaises(RuntimeError):
+            self.valve.close()
+
+        self.assertEqual(
+            output_calls_after_cleanup,
+            [(self.pin, self.gpio.LOW)],
+        )
+        self.assertEqual(self.gpio.output_calls, output_calls_after_cleanup)
+        self.assertTrue(self.valve._commands_disabled)
+        self.assertFalse(self.valve._cleanup_complete)
+
+    def test_close_error_survives_gpio_cleanup_failure(self) -> None:
+        """Preserve LOW-output failure while recording pin-release failure."""
+        close_error = RuntimeError("LOW output failed")
+        cleanup_error = RuntimeError("GPIO cleanup failed")
+        output_attempts = 0
+
+        def fail_output(pin: int, state: int) -> None:
+            """Raise the configured LOW-output failure."""
+            nonlocal output_attempts
+            output_attempts += 1
+            raise close_error
+
+        def fail_cleanup(pin: int) -> None:
+            """Raise the configured GPIO pin-release failure."""
+            raise cleanup_error
+
+        self.gpio.output = fail_output
+        self.gpio.cleanup = fail_cleanup
+
+        with self.assertRaises(RuntimeError) as raised:
+            self.valve.cleanup()
+
+        self.assertIs(raised.exception, close_error)
+        self.assertEqual(
+            close_error.__notes__,
+            [f"GPIO pin cleanup also failed: {cleanup_error!r}"],
+        )
+        self.assertEqual(output_attempts, 1)
+        self.assertTrue(self.valve._commands_disabled)
+        self.assertFalse(self.valve._cleanup_complete)
+
 
 if __name__=="__main__":
     unittest.main()

@@ -1,4 +1,4 @@
-"""Command-line entrypoint for the dry-run-first valve diagnostic."""
+"""Command-line entrypoint for the WH1 valve diagnostic."""
 
 from __future__ import annotations
 
@@ -11,8 +11,7 @@ from software.valve.valve_diagnostic import MAX_PULSE_SECONDS, run_valve_diagnos
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Check the WH1 valve relay path.")
-    parser.add_argument("--enable-output", action="store_true")
-    parser.add_argument("--state", choices=("off", "on"), default="off")
+    parser.add_argument("--state", choices=("off", "on"), default="on")
     parser.add_argument("--pulse-seconds", type=float, default=0.25)
     args = parser.parse_args(argv)
     if not 0.0 <= args.pulse_seconds <= MAX_PULSE_SECONDS:
@@ -22,16 +21,27 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
-    valve = build_gpio_valve() if args.enable_output else None
+    valve = build_gpio_valve()
+    diagnostic_error: BaseException | None = None
     try:
         run_valve_diagnostic(
             valve=valve,
             requested_state=args.state,
             pulse_seconds=args.pulse_seconds,
         )
+    except BaseException as error:
+        diagnostic_error = error
+        raise
     finally:
         if valve is not None:
-            valve.cleanup()
+            try:
+                valve.cleanup()
+            except BaseException as cleanup_error:
+                if diagnostic_error is None:
+                    raise
+                diagnostic_error.add_note(
+                    f"Valve cleanup also failed: {cleanup_error!r}"
+                )
     return 0
 
 

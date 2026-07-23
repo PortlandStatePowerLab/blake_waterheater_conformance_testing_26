@@ -65,24 +65,26 @@ Do not add ACS37800 register reads until the datasheet, active part variant, reg
 
 Record observed output in `test_records/`.
 
-## 5. Valve dry-run only
+## 5. Controlled valve pulse
 
 ```bash
 python3 bin/valve-check
 ```
 
-This must report dry-run behavior and must not touch GPIO17.
+This performs the default 0.25-second open pulse and then returns GPIO17 LOW.
 
 Record observed output in `test_records/`.
 
-## 6. Output checks only after review
-
-Do not run either command until relay polarity, wiring, load safety, fail-safe behavior, ADC values, flow scaling, and stop behavior are physically reviewed for the real station.
+## 6. Controlled output checks
 
 ```bash
-python3 bin/valve-check --enable-output --state off
-python3 bin/wh-draw --target-gal 0.1 --enable-output
+python3 bin/valve-check --state off
+python3 bin/wh-draw --target-gal 0.1
 ```
+
+The valve command above is close-only. The water-draw command constructs the
+station ADC and valve, runs one controlled 0.1-gallon draw, and releases both
+hardware resources.
 
 ## Reference records
 
