@@ -7,12 +7,15 @@ from software.runtime.controlled_water_draw_workflow import run_controlled_water
 
 
 class FakeValve:
-    def __init__(self) -> None:
+    def __init__(self, *, open_error: Exception | None = None) -> None:
         self.open_count = 0
         self.close_count = 0
+        self._open_error = open_error
 
     def open(self) -> None:
         self.open_count += 1
+        if self._open_error is not None:
+            raise self._open_error
 
     def close(self) -> None:
         self.close_count += 1
@@ -23,7 +26,7 @@ class FakeReader:
         self._flow_gpm = flow_gpm
         self._error = error
 
-    def get_sensor_snapshot(self)->SensorSnapshot:
+    def get_sensor_snapshot(self) -> SensorSnapshot:
         if self._error is not None:
             raise self._error
 
@@ -70,6 +73,20 @@ class ControlledWaterDrawWorkflowTest(unittest.TestCase):
                 valve=valve,
                 monotonic=lambda: next(times),
                 sleep=lambda _: None,
+            )
+
+        self.assertEqual(valve.open_count, 1)
+        self.assertEqual(valve.close_count, 1)
+
+    def test_closes_valve_when_open_raises(self) -> None:
+        """A failed open command still triggers exactly one close attempt."""
+        valve = FakeValve(open_error=RuntimeError("open failed"))
+
+        with self.assertRaisesRegex(RuntimeError, "open failed"):
+            run_controlled_water_draw(
+                1.0,
+                sensor_reader=FakeReader(),
+                valve=valve,
             )
 
         self.assertEqual(valve.open_count, 1)
