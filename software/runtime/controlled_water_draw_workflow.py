@@ -45,6 +45,7 @@ def run_controlled_water_draw(
     last_log = start
     low_flow_start: float | None = None
 
+    workflow_error: BaseException | None = None
     try:
         valve.open()
         print("Valve command asserted")
@@ -92,9 +93,19 @@ def run_controlled_water_draw(
                 last_log = now
 
             sleep(0.05)
+    except BaseException as error:
+        workflow_error = error
+        raise
     finally:
-        valve.close()
-        print("Valve command cleared")
+        try:
+            valve.close()
+            print("Valve command cleared")
+        except BaseException as close_error:
+            if workflow_error is None:
+                raise
+            workflow_error.add_note(
+                f"Valve close also failed: {close_error!r}"
+            )
 
     print(f"Volume drawn: {volume_gal:.3f} gal")
     return volume_gal

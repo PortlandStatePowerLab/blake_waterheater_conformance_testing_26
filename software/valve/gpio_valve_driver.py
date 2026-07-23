@@ -20,12 +20,13 @@ class GpioValveDriver:
         """
         self._gpio = gpio
         self._pin = pin
-        self._cleaned_up = False
+        self._commands_disabled = False
+        self._cleanup_complete = False
 
     def _require_active(self)->None:
-        """Reject GPIO commands after this driver has released its pin"""
-        if self._cleaned_up:
-            raise RuntimeError("valve GPIO drier has already been cleaned up")
+        """Reject valve commands after resource cleanup has begun"""
+        if self._commands_disabled:
+            raise RuntimeError("valve GPIO driver cleanup has already begun")
 
     def open(self) -> None:
         """Assert the relay output HIGH to command the valve open"""
@@ -41,22 +42,36 @@ class GpioValveDriver:
         """Force the valve command LOW and release the GPIO pin once
 
         Safety:
-            Cleanup is idempotent. Repeated calls do nothing. Once cleanup completes,
-            further open or close commands raise RuntimeError
+            The first call permanently disables normal valve commands. GPIO release
+            may be retried after failure, and repeated successful calls do nothing.
             """
-        if self._cleaned_up:
+        if self._cleanup_complete:
             return
 
-        try:
-            self.close()
-        finally:
+        close_error: BaseException | None = None
+        if not self._commands_disabled:
+            self._commands_disabled = True
             try:
-                self._gpio.cleanup(self._pin)
-            finally:
-                self._cleaned_up = True
+                self._gpio.output(self._pin, self._gpio.LOW)
+            except BaseException as error:
+                close_error = error
+
+        try:
+            self._gpio.cleanup(self._pin)
+        except BaseException as cleanup_error:
+            if close_error is None:
+                raise
+            close_error.add_note(
+                f"GPIO pin cleanup also failed: {cleanup_error!r}"
+            )
+            raise close_error from cleanup_error
+
+        self._cleanup_complete = True
+        if close_error is not None:
+            raise close_error
 
     def __enter__(self) -> "GpioValveDriver":
-        """Return this activedriver for context-mamanger use"""
+        """Return this active driver for context-manager use"""
         self._require_active()
         return self
 

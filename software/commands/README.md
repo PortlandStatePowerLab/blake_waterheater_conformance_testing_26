@@ -23,4 +23,4 @@ Prefer the matching `bin/` command. Python module form is `python3 -m software.c
 
 ## Safety notes
 
-Some commands open I2C or RS-485 devices or actuate GPIO. Read `--help`; valve and water-draw output require `--enable-output`.
+Some commands open I2C or RS-485 devices or actuate GPIO. Read `--help` before running a hardware command.

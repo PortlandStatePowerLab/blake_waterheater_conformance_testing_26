@@ -24,4 +24,6 @@ Run from any directory, for example `bin/sensor-check`.
 
 ## Safety notes
 
-These wrappers can reach real hardware. Valve actuation and water draws require `--enable-output`; inspect GS10 serial-port arguments before use.
+These wrappers can reach real hardware. `valve-check` defaults to a controlled
+0.25-second open pulse, and `wh-draw` starts a controlled draw when given a
+valid target. Inspect GS10 serial-port arguments before use.

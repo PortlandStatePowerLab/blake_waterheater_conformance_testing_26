@@ -65,7 +65,7 @@ bin/valve-check
 bin/wh-draw --target-gal 0.1
 ```
 
-The last two commands are dry-run only unless `--enable-output` is supplied.
+The last two commands operate the validated valve and water-draw hardware.
 
 ## Controlled output commands
 
@@ -73,8 +73,8 @@ The completed valve, sensor, flow, temperature, and target-stop verification
 records permit controlled WH1 use:
 
 ```bash
-bin/valve-check --enable-output --state off
-bin/wh-draw --target-gal 0.1 --enable-output
+bin/valve-check --state off
+bin/wh-draw --target-gal 0.1
 ```
 
 ## Do not run

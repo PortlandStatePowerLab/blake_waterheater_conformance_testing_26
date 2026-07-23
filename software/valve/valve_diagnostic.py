@@ -13,22 +13,18 @@ MAX_PULSE_SECONDS = 5.0
 
 def run_valve_diagnostic(
     *,
-    valve: Valve | None,
+    valve: Valve,
     requested_state: str,
     pulse_seconds: float,
     sleep: Callable[[float], None] = time.sleep,
 ) -> None:
-    """Report a dry run or safely exercise an injected valve."""
+    """Exercise an injected valve and restore its physical closed state."""
     if requested_state not in {"off", "on"}:
         raise ValueError("requested_state must be 'off' or 'on'")
     if not 0.0 <= pulse_seconds <= MAX_PULSE_SECONDS:
         raise ValueError("pulse_seconds must be between 0 and 5 seconds")
 
-    if valve is None:
-        print(f"[DRY-RUN] GPIO{VALVE_PIN} would be requested {requested_state.upper()}.")
-        print("No GPIO library was imported and no output was configured.")
-        return
-
+    diagnostic_error: BaseException | None = None
     try:
         if requested_state == "on":
             valve.open()
@@ -36,6 +32,16 @@ def run_valve_diagnostic(
             sleep(pulse_seconds)
         else:
             print(f"GPIO{VALVE_PIN} LOW requested")
+    except BaseException as error:
+        diagnostic_error = error
+        raise
     finally:
-        valve.close()
-        print(f"GPIO{VALVE_PIN} LOW")
+        try:
+            valve.close()
+            print(f"GPIO{VALVE_PIN} LOW")
+        except BaseException as close_error:
+            if diagnostic_error is None:
+                raise
+            diagnostic_error.add_note(
+                f"Valve close also failed: {close_error!r}"
+            )

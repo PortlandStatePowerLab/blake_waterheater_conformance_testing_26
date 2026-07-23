@@ -7,18 +7,31 @@ from software.runtime.controlled_water_draw_workflow import run_controlled_water
 
 
 class FakeValve:
-    def __init__(self, *, open_error: Exception | None = None) -> None:
+    """Record physical valve commands and inject representative failures."""
+
+    def __init__(
+        self,
+        *,
+        open_error: Exception | None = None,
+        close_error: Exception | None = None,
+    ) -> None:
+        """Initialize command counts and optional open or close failures."""
         self.open_count = 0
         self.close_count = 0
         self._open_error = open_error
+        self._close_error = close_error
 
     def open(self) -> None:
+        """Record an open command and optionally raise its configured error."""
         self.open_count += 1
         if self._open_error is not None:
             raise self._open_error
 
     def close(self) -> None:
+        """Record a close command and optionally raise its configured error."""
         self.close_count += 1
+        if self._close_error is not None:
+            raise self._close_error
 
 
 class FakeReader:
@@ -90,6 +103,29 @@ class ControlledWaterDrawWorkflowTest(unittest.TestCase):
             )
 
         self.assertEqual(valve.open_count, 1)
+        self.assertEqual(valve.close_count, 1)
+
+    def test_sensor_error_survives_valve_close_failure(self) -> None:
+        """Preserve the sensor error and record a later physical close failure."""
+        sensor_error = RuntimeError("read failed")
+        close_error = RuntimeError("close failed")
+        valve = FakeValve(close_error=close_error)
+        times = iter((0.0, 0.1))
+
+        with self.assertRaises(RuntimeError) as raised:
+            run_controlled_water_draw(
+                1.0,
+                sensor_reader=FakeReader(error=sensor_error),
+                valve=valve,
+                monotonic=lambda: next(times),
+                sleep=lambda _: None,
+            )
+
+        self.assertIs(raised.exception, sensor_error)
+        self.assertEqual(
+            sensor_error.__notes__,
+            [f"Valve close also failed: {close_error!r}"],
+        )
         self.assertEqual(valve.close_count, 1)
 
 
