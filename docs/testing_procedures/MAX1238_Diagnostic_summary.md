@@ -3,7 +3,7 @@
 # Diagnostic Tests for the 40-Count Delta on MAX1238 CH2
 
 ---
-MAX1238’s repeat-selected-channel scan mode:
+MAX1238â€™s repeat-selected-channel scan mode:
 
 - The chip performs scan conversions successively using an 800 ns track/hold acquisition interval and a 22 pF input capacitance, then returns results FIFO
 
@@ -14,7 +14,7 @@ import time
 
 from software.adc.max1238_builder import build_max1238
 from software.adc.max1238 import InputMode, ScanMode
-from software.common.hardware_map import CH_FLOW
+from software.station.station_hardware_map import CH_FLOW
 
 adc = build_max1238()
 
@@ -66,14 +66,14 @@ sample=10 single_before=476 repeat8=[478, 495, 494, 490, 492, 496, 492, 491] sin
 Interpretation:
 
 - First repeat low, later repeats recover toward 480: track/hold or input-settling behavior.
-- All eight repeats near 480: likely interaction from scanning CH0 → CH1 → CH2.
+- All eight repeats near 480: likely interaction from scanning CH0 â†’ CH1 â†’ CH2.
 - All eight repeats near 440: likely a broader scan-mode or transaction behavior.
 
 ## Determine When CH2 Goes Low
 
 Next, determine whether CH2 goes low:
 
-- whenever scanning AIN0 → AIN2,
+- whenever scanning AIN0 â†’ AIN2,
 - or only when the scan continues through AIN3.
 
 ---
@@ -82,7 +82,7 @@ Next, determine whether CH2 goes low:
 import time
 
 from software.adc.max1238_builder import build_max1238
-from software.common.hardware_map import (
+from software.station.station_hardware_map import (
     CH_AMBIENT,
     CH_FLOW,
     CH_HOT,
@@ -137,8 +137,8 @@ sample=10 scan_0_to_2_flow=449 scan_0_to_3_flow=440 single_flow=481 delta_single
 
 Interpretation:
 
-- Both scans read near 440: the problem happens during the AIN0 → AIN1 → AIN2 transition.
-- 0→2 reads near 480 but 0→3 reads near 440: including or reading AIN3 is affecting CH2, pointing toward scan-memory/read-length handling rather than basic CH2 acquisition.
+- Both scans read near 440: the problem happens during the AIN0 â†’ AIN1 â†’ AIN2 transition.
+- 0â†’2 reads near 480 but 0â†’3 reads near 440: including or reading AIN3 is affecting CH2, pointing toward scan-memory/read-length handling rather than basic CH2 acquisition.
 - Both read near 480: the earlier test sequence itself exposed another state-dependent interaction.
 
 ## Internal Clock vs. External Clock Timing
@@ -157,7 +157,7 @@ from software.adc.max1238 import (
     ReferenceVoltage,
     ResetMode,
 )
-from software.common.hardware_map import CH_FLOW, CH_HOT
+from software.station.station_hardware_map import CH_FLOW, CH_HOT
 
 adc = build_max1238()
 
@@ -206,7 +206,7 @@ Qualification:
 
 Still unknown:
 
-- Exactly which board-level detail makes CH2 the sensitive one—LM324 settling, mux charge transfer, source impedance, capacitance, or some combination.
+- Exactly which board-level detail makes CH2 the sensitive oneâ€”LM324 settling, mux charge transfer, source impedance, capacitance, or some combination.
 - The exact microscopic mechanism is not required for the configuration decision
   because the four-station clock-mode A/B result is clear.
 
@@ -231,7 +231,7 @@ from software.adc.max1238 import (
     ReferenceVoltage,
     ResetMode,
 )
-from software.sensor_ops import SensorReader
+from software.sensors.sensor_reader import SensorReader
 
 adc = build_max1238()
 
@@ -285,7 +285,7 @@ sample=10 hot_raw=1149 cold_raw=1145 flow_raw=481 ambient_raw=230 hot_c=19.69 co
 
 Expected result:
 
-- CH2 should stay around 0.475–0.485 V / 475–485 counts and the grouped flow should land close to 0 GPM instead of roughly −0.22 GPM.
+- CH2 should stay around 0.475â€“0.485 V / 475â€“485 counts and the grouped flow should land close to 0 GPM instead of roughly âˆ’0.22 GPM.
 
 ## Four-Station Clock Comparison
 
@@ -312,12 +312,12 @@ Shared cold-water data from WH1 uses a separate path and will be tested later.
 
 With external clock:
 
-- Grouped CH2: 476–482 counts
-- Equivalent input: 0.476–0.482 V
-- Converted flow: −0.021 to +0.010 GPM
+- Grouped CH2: 476â€“482 counts
+- Equivalent input: 0.476â€“0.482 V
+- Converted flow: âˆ’0.021 to +0.010 GPM
 - On WH1, hot, cold, and ambient remained plausible. On WH2-WH4, the physically
   connected hot, flow, and ambient channels remained plausible.
-- The former grouped result around 440 counts / −0.22 GPM is gone
+- The former grouped result around 440 counts / âˆ’0.22 GPM is gone
 
 ## Proven Across All Four Stations
 

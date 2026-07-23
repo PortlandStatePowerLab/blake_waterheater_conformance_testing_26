@@ -10,7 +10,7 @@ material that cannot be tied to an exact installed or purchased component.
 
 Datasheets are hardware reference documents, not the software source of truth
 for live pin, channel, or address assignments. Those assignments remain in
-`software/common/hardware_map.py`. Confirm uncertain part numbers and reference
+`software/station/station_hardware_map.py`. Confirm uncertain part numbers and reference
 designators against the schematic or BOM before renaming a file.
 
 ## BOM reconciliation

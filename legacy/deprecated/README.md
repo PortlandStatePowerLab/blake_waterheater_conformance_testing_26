@@ -5,6 +5,7 @@ Old, deprecated, broken, incomplete, or reference-only project material.
 ## Belongs here
 
 - Old scripts kept for reference
+- Pre-cleanup active implementations retained after responsibility-based refactors
 - Deprecated source trees
 - Generated legacy files preserved for review
 - Broken or incomplete historical work

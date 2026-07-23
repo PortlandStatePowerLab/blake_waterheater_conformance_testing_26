@@ -1,1 +1,1 @@
-# Valve-control package. Use diagnostics/valve_gpio_check.py for first dry-run checks.
+"""WH1 valve interface, GPIO driver, builder, and diagnostic package."""

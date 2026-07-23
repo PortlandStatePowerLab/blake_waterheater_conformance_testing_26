@@ -10,7 +10,7 @@ import unittest
 from enum import Enum
 from unittest.mock import patch
 
-from software.operator_checks import compare_adc_acquisition
+from software.commands import check_adc_acquisition_command as compare_adc_acquisition
 
 
 class FakeAdc:
@@ -68,7 +68,7 @@ class CompareAdcAcquisitionTest(unittest.TestCase):
             patch.object(
                 compare_adc_acquisition, "build_max1238", return_value=fake_adc
             ) as build_max1238,
-            patch.dict(sys.modules, {"software.adc.max1238": fake_driver}),
+            patch.dict(sys.modules, {"software.adc.max1238_driver": fake_driver}),
             patch.object(compare_adc_acquisition.time, "sleep", return_value=None),
             contextlib.redirect_stdout(captured_output),
         ):
@@ -89,7 +89,7 @@ class CompareAdcAcquisitionTest(unittest.TestCase):
                 ("read_single", compare_adc_acquisition.CH_FLOW),
             ],
         )
-        self.assertNotIn("software.adc.max1238", sys.modules)
+        self.assertNotIn("software.adc.max1238_driver", sys.modules)
         self.assertNotIn("smbus2", sys.modules)
 
         output = captured_output.getvalue()
@@ -112,7 +112,7 @@ class CompareAdcAcquisitionTest(unittest.TestCase):
     @staticmethod
     def make_fake_driver_module() -> types.ModuleType:
         """Return enum-only driver stand-ins without importing Linux hardware."""
-        module = types.ModuleType("software.adc.max1238")
+        module = types.ModuleType("software.adc.max1238_driver")
         for enum_name, member_names in {
             "ClockType": ("Internal", "External"),
             "Polarity": ("Unipolar",),
@@ -134,7 +134,7 @@ class CompareAdcAcquisitionTest(unittest.TestCase):
                 events: list[tuple[str, object]] = []
                 fake_adc.setup_adc = lambda **kwargs: events.append(("setup", kwargs))
                 with (
-                    patch.dict(sys.modules, {"software.adc.max1238": fake_driver}),
+                    patch.dict(sys.modules, {"software.adc.max1238_driver": fake_driver}),
                     patch.object(
                         compare_adc_acquisition.time,
                         "sleep",
@@ -161,7 +161,7 @@ class CompareAdcAcquisitionTest(unittest.TestCase):
         fake_driver = self.make_fake_driver_module()
         with (
             patch.object(compare_adc_acquisition, "build_max1238", return_value=fake_adc),
-            patch.dict(sys.modules, {"software.adc.max1238": fake_driver}),
+            patch.dict(sys.modules, {"software.adc.max1238_driver": fake_driver}),
             patch.object(compare_adc_acquisition.time, "sleep", return_value=None),
         ):
             with self.assertRaisesRegex(OSError, "fake I2C failure"):

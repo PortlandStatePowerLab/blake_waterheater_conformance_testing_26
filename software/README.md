@@ -1,19 +1,24 @@
 # Software
 
-Active software is organized by component role:
+## Purpose
 
-- `common/hardware_map.py`: shared WH1 hardware constants.
-- `adc/`: the MAX1238 driver, its builder, and the hardware-agnostic ADC interface.
-- `operator_checks/`: manually invoked live-hardware inspection tools; these are not automated tests.
-- `helpers/`: documented boundary for small reusable support functions.
-- `services/`: documented boundary for reusable lab workflows.
-- `entrypoints/`: documented boundary for operator or external startup code.
-- `water_draw/whs.py`: corrected ADC-based water draw controller. GPIO output is dry-run unless `--enable-output` is passed.
-- `power_monitoring/`: ACS37800 calibration/reference workspace. Register reads still require review.
-- `rs485_cta2045/`: Modbus/RS-485 diagnostic copied from the active script dump.
+Active WH1 Python code, organized so folders identify the subsystem and filenames identify the role.
 
-Operator-facing shell commands belong in `../bin/` as thin wrappers. Automated,
-laptop-safe assertions belong in `../tests/`. Builders and interfaces stay with
-the subsystem they construct or describe.
+## Contains
 
-Legacy GPIO6 flow, direct DS18B20, generated, and duplicate scripts are not active here.
+- `station/`: physical station assignments.
+- `adc/`, `sensors/`, `valve/`, `power/`, `gs10_drive/`: subsystem code.
+- `runtime/`: coordinated station procedures.
+- `commands/`: user-invoked Python entrypoints.
+
+## Does not belong here
+
+- Historical scripts, generated measurements, or hardware drawings.
+
+## Role rules
+
+Drivers communicate with hardware; builders construct dependencies; interfaces define required operations; readers process measurements; diagnostics verify behavior; commands are user entrypoints; workflows are finite lab procedures.
+
+## Usage
+
+Import modules as `software.<subsystem>.<role_file>` or use a command under `bin/`.

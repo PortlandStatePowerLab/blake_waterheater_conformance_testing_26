@@ -30,7 +30,7 @@ Stop if expected devices are absent.
 ## 3. Read-only ADC check
 
 ```bash
-python3 software/operator_checks/read_adc_raw.py
+python3 bin/adc-raw
 ```
 
 Confirm channels print plausible raw counts and voltages for CH0, CH1, CH2, CH3, and CH4.
@@ -50,7 +50,7 @@ Record observed output in `test_records/`.
 ## 4. ACS37800 review-required check
 
 ```bash
-python3 software/operator_checks/read_acs37800_once.py
+python3 bin/power-monitor-check
 ```
 
 This script is intentionally a safe stub until the usable ACS37800 register map is verified.
@@ -68,7 +68,7 @@ Record observed output in `test_records/`.
 ## 5. Valve dry-run only
 
 ```bash
-python3 software/operator_checks/valve_gpio_check.py
+python3 bin/valve-check
 ```
 
 This must report dry-run behavior and must not touch GPIO17.
@@ -80,8 +80,8 @@ Record observed output in `test_records/`.
 Do not run either command until relay polarity, wiring, load safety, fail-safe behavior, ADC values, flow scaling, and stop behavior are physically reviewed for the real station.
 
 ```bash
-python3 software/operator_checks/valve_gpio_check.py --enable-output --state off
-python3 software/water_draw/whs.py --target-gal 0.1 --enable-output
+python3 bin/valve-check --enable-output --state off
+python3 bin/wh-draw --target-gal 0.1 --enable-output
 ```
 
 ## Reference records

@@ -8,7 +8,7 @@ import sys
 import unittest
 from unittest.mock import patch
 
-from software.operator_checks import read_adc_raw
+from software.commands import check_adc_raw_command as read_adc_raw
 
 
 class FakeAdc:
@@ -73,7 +73,7 @@ class ReadAdcRawTest(unittest.TestCase):
             [channel for _, channel in read_adc_raw.CHANNELS],
         )
         self.assertTrue(fake_adc.closed)
-        self.assertNotIn("software.adc.max1238", sys.modules)
+        self.assertNotIn("software.adc.max1238_driver", sys.modules)
         self.assertNotIn("smbus2", sys.modules)
 
         output = captured_output.getvalue()

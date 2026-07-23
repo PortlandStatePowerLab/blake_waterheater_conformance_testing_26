@@ -12,9 +12,10 @@
 
 - `hardware/`: copied schematics, PCB fabrication/source files, BOM-related
   material if present, datasheets, and hardware map workspace.
-- `software/`: active staged Python package. Current active constants live in
-  `software/common/hardware_map.py`; first-run diagnostics live in
-  `software/operator_checks/`.
+- `software/`: active staged Python package. Folders identify the subsystem and
+  filenames identify the role. Physical assignments live in
+  `software/station/station_hardware_map.py`; Python entrypoints live in
+  `software/commands/`; operator-facing wrappers live in `bin/`.
 - `deployment/`: operator notes for Pi setup, copy commands, and first test
   sequence. These files are procedures only.
 - `project_control/`: review gates, verification records, templates, and
@@ -35,7 +36,9 @@
 ## Where to look
 
 - Active scripts: `software/`
-- Manually invoked operator checks: `software/operator_checks/`
+- Human-facing commands: `bin/`
+- Python command entrypoints: `software/commands/`
+- Reusable diagnostics: the corresponding `software/<subsystem>/` folder
 - Hardware schematics and PCB files: `hardware/schematics/` and `hardware/pcb/`
 - Deployment order: `deployment/test_run_order/FIRST_PI_TEST_SEQUENCE.md`
 - Open review gates: `REVIEW_REQUIRED.md` and `project_control/review_pending/`

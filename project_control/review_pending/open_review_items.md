@@ -1,35 +1,60 @@
 # Open Review Items
 
-Status: ACTIVE
-Last updated: 2026-07-20
+Status: CLOSED
+Last updated: 2026-07-22
 
-This file contains only checks that still require physical inspection, station
-data, hardware documentation, or a controlled lab run. Completed repository and
-documentation checks are recorded at the end of this file.
-
-## Hardware identity and physical-presence checks
-
-- [ ] Confirm whether any legacy `GPIO6` pulse-flow setup still exists physically.
-- [ ] Confirm whether any direct `/sys/bus/w1` DS18B20 sensor wiring still exists physically.
+All review items identified during this cleanup are closed. Completed checks
+and their evidence records are listed below.
 
 ## Software, calibration, and controlled-run checks
 
-- [ ] Confirm the correct schedule CSVs before re-enabling a scheduled draw workflow.
-- [ ] Verify flow-transmitter calibration, gallons-per-minute scaling, and
-  plausible ADC values during a controlled water-draw setup.
-- [ ] Verify temperature-transmitter scaling and plausible hot/cold readings on
-  CH0 and CH1 during a controlled water-draw setup.
-- [ ] Verify the ACS37800 register map, scaling, and usable software reads before
-  replacing the safe placeholder operator check.
-- [ ] Verify `software/water_draw/whs.py --enable-output` stop behavior during a
-  controlled lab run before routine use.
+None.
 
-## Closed during repository cleanup
+## Closed review items
+
+### Closed by physical verification
+
+- [x] The WH1 physical wiring inspection found no installed or active legacy
+  `GPIO6` pulse-flow setup. Flow is routed through the custom PCB to MAX1238 CH2.
+  See
+  `../verification_completed/gpio6_flow_path_VERIFIED_2026-06-25.md`.
+- [x] The WH1 physical wiring inspection found no installed direct DS18B20 or
+  Raspberry Pi One-Wire temperature-sensor path. Hot, cold, and ambient
+  temperature signals use the custom PCB and MAX1238 CH0, CH1, and CH4. See
+  `../verification_completed/ds18b20_wiring_absence_VERIFIED_2026-06-25.md`.
+- [x] Scheduled CSV-driven draws are deferred and are not required for the
+  current WH1 deployment. The supported operator path is one draw per invocation
+  through `bin/wh-draw --target-gal`; schedule CSVs and legacy
+  controllers remain excluded under `legacy_deprecated/`. No schedule testing is
+  required because no schedule-driven feature is being activated. Any future
+  scheduler must be a separate entrypoint or service that calls the validated
+  single-draw operation. See
+  `../verification_completed/scheduled_draw_workflow_DEFERRED_2026-07-21.md`.
+- [x] The installed SBN234 flow path and nominal 0.2-to-10.0-GPM scaling are
+  accepted for current operational use based on a controlled draw, local-display
+  comparison, and approximate 2.5-gallon bucket check. Precision calibration is
+  deferred; no slope or intercept correction was applied. See
+  `../verification_completed/flow_scaling_OPERATIONALLY_ACCEPTED_2026-07-22.md`.
+- [x] The active single-draw path stopped at 2.501 gal for a 2.500-gal target,
+  with clean valve opening and immediate cutoff. See
+  `../verification_completed/water_draw_stop_behavior_VERIFIED_2026-07-22.md`.
+- [x] Physical nameplate inspection confirmed Hasman HSM-100 hot/cold
+  transmitters with a -50 to +150 degC, 4-20 mA range, exactly matching the
+  active software endpoints and 12.5 degC-per-mA slope. Controlled-draw CH0/CH1
+  values were stable and plausible. See
+  `../verification_completed/WH1_temperature_plausibility_controlled_draw_2026-07-22.md`.
+- [x] The ACS37800 at `0x60`, usable register reads, register interpretation,
+  and WH1 scaling are verified against read-only station observations and the
+  team `power_scripts` implementation. Sensor/power path unification remains a
+  separate integration task. See
+  `../verification_completed/acs37800_power_path_VERIFIED_2026-07-22.md`.
+
+### Closed during repository cleanup
 
 Closed 2026-07-20 by repository inspection and documentation review; these are
 not new physical hardware verifications.
 
-- [x] ADC channel constants use `software/common/hardware_map.py` as their active
+- [x] ADC channel constants use `software/station/station_hardware_map.py` as their active
   software source of truth.
 - [x] The stale U11 `MAX1239` EasyEDA library metadata is explicitly superseded
   by the displayed MAX1238 identity and the completed hardware identity record.
@@ -48,6 +73,5 @@ not new physical hardware verifications.
 
 ## Completion rule
 
-When a remaining item is physically or operationally verified, create or update
-a dated record in `project_control/verification_completed/`, then remove it from
-the open sections and add a concise checked entry above with the evidence path.
+New review gates, if identified, must receive a dated record in
+`project_control/verification_completed/` before they are considered closed.

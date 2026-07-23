@@ -1,54 +1,44 @@
 # Copy To Pi Commands
 
-These commands are examples for a PowerShell terminal on the staging workstation.
-They are not run as part of staging.
-
-Set the target:
+These PowerShell examples copy only the allow-listed runtime folders. Review
+`DEPLOY_MANIFEST.md` before use.
 
 ```powershell
-$STAGE = "C:\Users\Blake\Documents\Projects\WH1-master-staging"
+$STAGE = "C:\Users\Blake\Documents\Projects\blake_water_heater_conformance_testing_26"
 $PI = "pi@raspberrypi.local"
 $DEST = "/home/pi/wh1"
-```
 
-Create the destination:
+ssh $PI "mkdir -p $DEST/software $DEST/bin"
 
-```powershell
-ssh $PI "mkdir -p $DEST"
-```
+ssh $PI "mkdir -p $DEST/software/station $DEST/software/adc $DEST/software/sensors $DEST/software/valve $DEST/software/power $DEST/software/runtime $DEST/software/commands"
 
-Create runtime subdirectories:
-
-```powershell
-ssh $PI "mkdir -p $DEST/software/common $DEST/software/adc $DEST/software/operator_checks $DEST/software/water_draw"
-```
-
-Copy only the deploy manifest runtime payload:
-
-```powershell
+scp "$STAGE\software\station\*.py" "${PI}:$DEST/software/station/"
+scp "$STAGE\software\adc\*.py" "${PI}:$DEST/software/adc/"
+scp "$STAGE\software\sensors\*.py" "${PI}:$DEST/software/sensors/"
+scp "$STAGE\software\valve\*.py" "${PI}:$DEST/software/valve/"
+scp "$STAGE\software\power\__init__.py" "${PI}:$DEST/software/power/"
+scp "$STAGE\software\power\power_monitor_diagnostic.py" "${PI}:$DEST/software/power/"
+scp "$STAGE\software\runtime\*.py" "${PI}:$DEST/software/runtime/"
+scp "$STAGE\software\commands\__init__.py" "${PI}:$DEST/software/commands/"
+scp "$STAGE\software\commands\check_adc_raw_command.py" "${PI}:$DEST/software/commands/"
+scp "$STAGE\software\commands\check_adc_acquisition_command.py" "${PI}:$DEST/software/commands/"
+scp "$STAGE\software\commands\check_sensors_command.py" "${PI}:$DEST/software/commands/"
+scp "$STAGE\software\commands\check_valve_command.py" "${PI}:$DEST/software/commands/"
+scp "$STAGE\software\commands\check_power_monitor_command.py" "${PI}:$DEST/software/commands/"
+scp "$STAGE\software\commands\run_water_draw_command.py" "${PI}:$DEST/software/commands/"
 scp "$STAGE\software\__init__.py" "${PI}:$DEST/software/"
 scp "$STAGE\software\requirements.txt" "${PI}:$DEST/software/"
-scp "$STAGE\software\common\__init__.py" "${PI}:$DEST/software/common/"
-scp "$STAGE\software\common\hardware_map.py" "${PI}:$DEST/software/common/"
-scp "$STAGE\software\adc\__init__.py" "${PI}:$DEST/software/adc/"
-scp "$STAGE\software\adc\max1238.py" "${PI}:$DEST/software/adc/"
-scp "$STAGE\software\operator_checks\__init__.py" "${PI}:$DEST/software/operator_checks/"
-scp "$STAGE\software\operator_checks\read_adc_raw.py" "${PI}:$DEST/software/operator_checks/"
-scp "$STAGE\software\operator_checks\read_acs37800_once.py" "${PI}:$DEST/software/operator_checks/"
-scp "$STAGE\software\operator_checks\valve_gpio_check.py" "${PI}:$DEST/software/operator_checks/"
-scp "$STAGE\software\water_draw\__init__.py" "${PI}:$DEST/software/water_draw/"
-scp "$STAGE\software\water_draw\whs.py" "${PI}:$DEST/software/water_draw/"
+scp "$STAGE\bin\adc-raw" "${PI}:$DEST/bin/"
+scp "$STAGE\bin\adc-acquisition-compare" "${PI}:$DEST/bin/"
+scp "$STAGE\bin\sensor-check" "${PI}:$DEST/bin/"
+scp "$STAGE\bin\valve-check" "${PI}:$DEST/bin/"
+scp "$STAGE\bin\power-monitor-check" "${PI}:$DEST/bin/"
+scp "$STAGE\bin\wh-draw" "${PI}:$DEST/bin/"
 scp "$STAGE\DEPLOY_MANIFEST.md" "${PI}:$DEST/"
-scp "$STAGE\REVIEW_REQUIRED.md" "${PI}:$DEST/"
-scp "$STAGE\README_FIRST.md" "${PI}:$DEST/"
+
+ssh $PI "find $DEST/bin -type f -exec chmod +x {} +"
 ```
 
-Do not copy these as runtime payload:
-
-- `legacy_deprecated/`
-- `docs/`
-- `hardware/`
-- `source_archive_index/`
-- generated `__pycache__/` directories
-
-After copying, log into the Pi and run the first test sequence.
+Do not copy `software/gs10_drive/` as part of the normal WH1 payload. Do not
+copy `legacy_deprecated/`, documentation, hardware-source folders, caches, or
+generated results.

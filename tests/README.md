@@ -8,5 +8,5 @@ actuate GPIO, the valve, mains-connected equipment, or other live station hardwa
 
 Test modules may import active code from `software/`.
 
-Manually invoked station inspection tools belong in `software/operator_checks/`, even
+Manually invoked station inspection tools belong in `software/commands/`, even
 when they print a pass/fail result.

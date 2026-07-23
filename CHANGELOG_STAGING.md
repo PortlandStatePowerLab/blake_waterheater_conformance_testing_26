@@ -9,7 +9,7 @@ Date: 2026-06-25
 - Audit reports and crash recovery files are staged under `docs/audit_reports/`.
 - Historical scripts, generated files, old duplicates, GPIO6 flow scripts, and
   direct DS18B20 scripts are kept under `legacy_deprecated/`.
-- Active shared constants are in `software/common/hardware_map.py`.
+- Active shared constants are in `software/station/station_hardware_map.py`.
 - The MAX1238 ADC driver is staged in `software/adc/max1238.py`.
 
 ## Fixed or completed
@@ -53,4 +53,4 @@ Date: 2026-06-25
   `deployment/test_run_order/FIRST_PI_TEST_SEQUENCE.md`.
 - Verify I2C device presence before any sensor read.
 - Confirm completed valve relay verification record before using valve GPIO output checks.
-- Verify ADC values, flow scaling, temperature scaling, and stop behavior before routine `software/water_draw/whs.py --enable-output` use.
+- Verify ADC values, flow scaling, temperature scaling, and stop behavior before routine `bin/wh-draw --enable-output` use.

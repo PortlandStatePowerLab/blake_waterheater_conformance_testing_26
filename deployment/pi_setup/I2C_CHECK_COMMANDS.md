@@ -19,7 +19,7 @@ i2cdetect -y 1
 Expected review targets:
 
 - MAX1238 ADC address from the staged driver: `0x35`
-- ACS37800 address from `software/common/hardware_map.py`: `0x60`
+- ACS37800 address from `software/station/station_hardware_map.py`: `0x60`
 
 If either address is absent, stop and review power, ribbon cable orientation,
 level-shifter power rails, pullups, and PCB assembly before running Python

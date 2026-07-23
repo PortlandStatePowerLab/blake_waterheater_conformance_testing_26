@@ -1,62 +1,84 @@
 # WH1 Deployment Manifest
 
-This manifest is the allow-list for Raspberry Pi copy. Do not copy
-`legacy_deprecated/`, `docs/`, `hardware/`, generated caches, or audit reports as
-runtime payload.
+This manifest is the allow-list for Raspberry Pi copy. Do not copy legacy,
+documentation, hardware-source, cache, or audit folders as runtime payload.
+
+Scheduled CSV-driven draws remain unsupported. The supported operator path is
+one draw per invocation of `bin/wh-draw --target-gal ...`.
 
 Suggested Pi destination: `/home/pi/wh1`
 
 ## Runtime files to copy
 
-| Staged file | Suggested Pi destination | Purpose |
-|-------------|--------------------------|---------|
-| `software/__init__.py` | `/home/pi/wh1/software/__init__.py` | Python package marker |
-| `software/requirements.txt` | `/home/pi/wh1/software/requirements.txt` | Python dependency list |
-| `software/common/__init__.py` | `/home/pi/wh1/software/common/__init__.py` | Shared package marker |
-| `software/common/hardware_map.py` | `/home/pi/wh1/software/common/hardware_map.py` | Current hardware constants |
-| `software/adc/__init__.py` | `/home/pi/wh1/software/adc/__init__.py` | ADC package marker |
-| `software/adc/max1238.py` | `/home/pi/wh1/software/adc/max1238.py` | MAX1238 I2C ADC driver |
-| `software/operator_checks/__init__.py` | `/home/pi/wh1/software/operator_checks/__init__.py` | Operator-check package marker |
-| `software/operator_checks/read_adc_raw.py` | `/home/pi/wh1/software/operator_checks/read_adc_raw.py` | Read-only MAX1238 raw channel check |
-| `software/operator_checks/read_acs37800_once.py` | `/home/pi/wh1/software/operator_checks/read_acs37800_once.py` | Safe ACS37800 review-required check |
-| `software/operator_checks/valve_gpio_check.py` | `/home/pi/wh1/software/operator_checks/valve_gpio_check.py` | Valve GPIO dry-run check; output disabled by default |
-| `software/water_draw/__init__.py` | `/home/pi/wh1/software/water_draw/__init__.py` | Water draw package marker |
-| `software/water_draw/whs.py` | `/home/pi/wh1/software/water_draw/whs.py` | Dry-run-first water draw controller |
+- `software/__init__.py`
+- `software/requirements.txt`
+- `software/station/__init__.py`
+- `software/station/station_hardware_map.py`
+- `software/adc/__init__.py`
+- `software/adc/adc_interface.py`
+- `software/adc/max1238_driver.py`
+- `software/adc/max1238_builder.py`
+- `software/adc/adc_raw_diagnostic.py`
+- `software/adc/adc_acquisition_diagnostic.py`
+- `software/sensors/__init__.py`
+- `software/sensors/sensor_conversion_math.py`
+- `software/sensors/sensor_configuration_loader.py`
+- `software/sensors/sensor_reader.py`
+- `software/sensors/sensor_diagnostic.py`
+- `software/valve/__init__.py`
+- `software/valve/valve_interface.py`
+- `software/valve/gpio_valve_driver.py`
+- `software/valve/gpio_valve_builder.py`
+- `software/valve/valve_diagnostic.py`
+- `software/power/__init__.py`
+- `software/power/power_monitor_diagnostic.py`
+- `software/runtime/__init__.py`
+- `software/runtime/controlled_water_draw_workflow.py`
+- `software/commands/__init__.py`
+- `software/commands/check_adc_raw_command.py`
+- `software/commands/check_adc_acquisition_command.py`
+- `software/commands/check_sensors_command.py`
+- `software/commands/check_valve_command.py`
+- `software/commands/check_power_monitor_command.py`
+- `software/commands/run_water_draw_command.py`
+- `bin/adc-raw`
+- `bin/adc-acquisition-compare`
+- `bin/sensor-check`
+- `bin/valve-check`
+- `bin/power-monitor-check`
+- `bin/wh-draw`
+
+The GS10 drive files are excluded from the normal WH1 runtime payload until
+that separate RS-485 device is part of an approved station procedure.
 
 ## First safe Pi commands
 
-Run from `/home/pi/wh1` after copying the runtime files:
+Run from `/home/pi/wh1`:
 
 ```bash
 python3 -m pip install -r software/requirements.txt
 python3 -m compileall software
-ls -l /dev/i2c-1
 i2cdetect -y 1
-python3 software/operator_checks/read_adc_raw.py
-python3 software/operator_checks/read_acs37800_once.py
-python3 software/operator_checks/valve_gpio_check.py
+bin/adc-raw
+bin/power-monitor-check
+bin/valve-check
+bin/wh-draw --target-gal 0.1
 ```
 
-`read_acs37800_once.py` is intentionally a review-required stub until the usable
-register map is verified.
+The last two commands are dry-run only unless `--enable-output` is supplied.
 
 ## Controlled output commands
 
-`software/operator_checks/valve_gpio_check.py --enable-output` may be used only after
-confirming the completed valve relay verification record:
+The completed valve, sensor, flow, temperature, and target-stop verification
+records permit controlled WH1 use:
 
-```text
-project_control/verification_completed/valve_relay_operation_VERIFIED_2026-07-01.md
+```bash
+bin/valve-check --enable-output --state off
+bin/wh-draw --target-gal 0.1 --enable-output
 ```
 
-`software/water_draw/whs.py --enable-output` still requires ADC values, flow
-scaling, temperature scaling, and stop behavior to be reviewed on the real
-station before routine use.
-
-## Do not run yet
+## Do not run
 
 - Anything under `legacy_deprecated/`.
-- Any direct DS18B20 or GPIO6 flow-count script from legacy.
-- `software/water_draw/whs.py --enable-output` until ADC values, flow scaling,
-  relay polarity, temperature scaling, and stop behavior have been reviewed on
-  the real station.
+- Direct DS18B20 or GPIO6 flow-count scripts from legacy material.
+- `bin/gs10-modbus-check` without an approved GS10 serial-device procedure.

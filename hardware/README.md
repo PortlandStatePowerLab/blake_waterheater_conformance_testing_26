@@ -20,5 +20,5 @@ Hardware reference material for the WH1 water heater test station.
 Hardware documents are reviewed reference inputs for lab students and operators;
 they are not generated runtime output. The software source of truth for GPIO pins,
 ADC channels, I2C addresses, and permanent assignments is
-`software/common/hardware_map.py`. Do not create a second hardware-map document
+`software/station/station_hardware_map.py`. Do not create a second hardware-map document
 that duplicates those constants.

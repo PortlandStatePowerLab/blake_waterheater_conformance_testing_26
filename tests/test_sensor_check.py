@@ -8,13 +8,13 @@ import sys
 import unittest
 from unittest.mock import patch
 
-from software.common.hardware_map import (
+from software.station.station_hardware_map import (
     CH_AMBIENT,
     CH_COLD,
     CH_FLOW,
     CH_HOT,
 )
-from software.operator_checks import sensor_check
+from software.commands import check_sensors_command as sensor_check
 
 
 class FakeAdc:
@@ -99,7 +99,7 @@ class SensorCheckTest(unittest.TestCase):
         self.assertEqual(fake_adc.read_range_calls, 1)
         self.assertEqual(fake_adc.requested_range, (CH_HOT, CH_AMBIENT))
         self.assertTrue(fake_adc.closed)
-        self.assertNotIn("software.adc.max1238", sys.modules)
+        self.assertNotIn("software.adc.max1238_driver", sys.modules)
         self.assertNotIn("smbus2", sys.modules)
 
         output = captured_output.getvalue()
@@ -121,8 +121,8 @@ class SensorCheckTest(unittest.TestCase):
             "    ambient_temp_f    :",
             "  Flow",
             "    flow_gpm          :",
-            " °C",
-            " °F",
+            " Â°C",
+            " Â°F",
             " GPM",
         ):
             self.assertIn(report_text, output)

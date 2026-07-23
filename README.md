@@ -28,6 +28,24 @@ Main focus areas:
 
 Only files listed in `DEPLOY_MANIFEST.md` are intended to be copied to the Raspberry Pi runtime location.
 
+## Software navigation rule
+
+Folders identify the subsystem. Filenames identify the role.
+
+- `command`: user-invoked Python entrypoint.
+- `runtime`: ongoing station coordination.
+- `workflow`: finite multi-step lab procedure.
+- `reader`: retrieves and processes measurements.
+- `driver`: directly communicates with hardware or a low-level protocol.
+- `builder`: constructs and configures a hardware dependency.
+- `interface`: defines required operations.
+- `conversion_math`: deterministic unit or signal conversion.
+- `configuration_loader`: loads and validates configuration or calibration overrides.
+- `diagnostic` or `check`: verifies subsystem behavior.
+
+Explicit filenames are intentional so their responsibility remains clear in VS
+Code tabs, searches, tracebacks, GitHub diffs, and copied files.
+
 ## Repository Contents
 
 ```text
@@ -38,6 +56,7 @@ Only files listed in `DEPLOY_MANIFEST.md` are intended to be copied to the Raspb
 ├── README.md
 ├── README_FIRST.md
 ├── REVIEW_REQUIRED.md
+├── bin/
 ├── deployment/
 │   ├── copy_to_pi/
 │   ├── pi_setup/
@@ -63,15 +82,14 @@ Only files listed in `DEPLOY_MANIFEST.md` are intended to be copied to the Raspb
 │   └── old_duplicates/
 ├── software/
 │   ├── adc/
-│   ├── common/
-│   ├── entrypoints/
-│   ├── helpers/
-│   ├── operator_checks/
-│   ├── power_monitoring/
-│   ├── rs485_cta2045/
-│   ├── services/
+│   ├── commands/
+│   ├── gs10_drive/
+│   ├── power/
+│   ├── runtime/
+│   ├── sensors/
+│   ├── station/
 │   ├── valve/
-│   └── water_draw/
+│   └── README.md
 └── source_archive_index/
 ```
 ## Folder Summary
@@ -80,6 +98,7 @@ Only files listed in `DEPLOY_MANIFEST.md` are intended to be copied to the Raspb
 - docs/ -- active project documents, wiring notes, testing procedures, audit reports, and reference-only documents
 - hardware/ -- BOM material, datasheets, hardware maps, PCB files, and schematics
 - software/ -- active staged Python code organized by subsystem and explicit component role
+- bin/ -- human-facing shell commands that call `software.commands`
 - legacy_deprecated/ -- old, duplicate, generated, broken, or deprecated scripts kept only for reference.
 - source_archive_index/ -- sourced indexes, audit indexes, and search/reference tracking
 
@@ -98,7 +117,7 @@ Only files listed in `DEPLOY_MANIFEST.md` are intended to be copied to the Raspb
 - [Staging Changelog](./CHANGELOG_STAGING.md)
 - [Deployment Notes](./deployment/)
 - [Software](./software/)
-- [Operator checks](./software/operator_checks/)
+- [Software commands](./software/commands/)
 - [Hardware References](./hardware/)
 - [Wiring Documentation](./docs/wiring/)
 - [Testing Procedures](./docs/testing_procedures/)

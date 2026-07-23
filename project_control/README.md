@@ -20,10 +20,11 @@ If something has been checked, tested, and recorded with a date/result, move or 
 - `measurement_data/` contains measured or source datasets.
 - `runtime_logs/` contains generated operational logs.
 - `generated_results/` contains derived plots, processed data, and reports.
-- `software/operator_checks/` contains manually invoked hardware inspections.
+- `software/commands/` contains user-invoked Python entrypoints.
+- Reusable diagnostics live with their subsystem under `software/`.
 - `tests/` contains laptop-safe automated verification.
-- `software/helpers/`, `software/services/`, and `software/entrypoints/` are
-  explicit role boundaries; their READMEs define what may be added.
+- `software/runtime/` contains station workflows and coordination.
+- `bin/` contains human-facing shell commands that call `software.commands`.
 
 Deferred decisions belong in `review_pending/open_review_items.md`; do not guess
 hardware identities, BOM contents, or the role of an unclear archived file.

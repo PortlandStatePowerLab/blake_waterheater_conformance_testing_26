@@ -40,7 +40,7 @@ class FakeMax1238:
 
 def make_fake_driver_module() -> types.ModuleType:
     """Create the concrete-driver symbols without importing smbus2."""
-    module = types.ModuleType("software.adc.max1238")
+    module = types.ModuleType("software.adc.max1238_driver")
     for enum_name, member_names in {
         "ClockType": ("Internal", "External"),
         "Polarity": ("Unipolar",),
@@ -71,7 +71,7 @@ class Max1238BuilderTest(unittest.TestCase):
             original_setup(adc, **kwargs)
 
         with (
-            patch.dict(sys.modules, {"software.adc.max1238": fake_driver}),
+            patch.dict(sys.modules, {"software.adc.max1238_driver": fake_driver}),
             patch.object(FakeMax1238, "setup_adc", record_setup),
             patch.object(
                 max1238_builder.time,
@@ -104,7 +104,7 @@ class Max1238BuilderTest(unittest.TestCase):
         FakeMax1238.setup_error = setup_error
 
         with (
-            patch.dict(sys.modules, {"software.adc.max1238": fake_driver}),
+            patch.dict(sys.modules, {"software.adc.max1238_driver": fake_driver}),
             patch.object(max1238_builder.time, "sleep") as sleep,
         ):
             with self.assertRaises(OSError) as raised:
@@ -121,7 +121,7 @@ class Max1238BuilderTest(unittest.TestCase):
         FakeMax1238.setup_error = setup_error
         FakeMax1238.close_error = RuntimeError("fake close failure")
 
-        with patch.dict(sys.modules, {"software.adc.max1238": fake_driver}):
+        with patch.dict(sys.modules, {"software.adc.max1238_driver": fake_driver}):
             with self.assertRaises(OSError) as raised:
                 max1238_builder.build_max1238()
 
