@@ -1,7 +1,7 @@
 """Laptop-safe tests for the controlled water-draw workflow."""
 
 import unittest
-from types import SimpleNamespace
+from software.sensors.sensor_reader import SensorSnapshot
 
 from software.runtime.controlled_water_draw_workflow import run_controlled_water_draw
 
@@ -23,13 +23,21 @@ class FakeReader:
         self._flow_gpm = flow_gpm
         self._error = error
 
-    def get_sensor_snapshot(self):
+    def get_sensor_snapshot(self)->SensorSnapshot:
         if self._error is not None:
             raise self._error
-        return SimpleNamespace(
+
+        return SensorSnapshot(
+            hot_raw_counts=0,
+            cold_raw_counts=0,
+            flow_raw_counts=0,
+            ambient_raw_counts=0,
             hot_temp_c=40.0,
+            hot_temp_f=104.0,
             cold_temp_c=20.0,
+            cold_temp_f=68.0,
             ambient_temp_c=22.0,
+            ambient_temp_f=71.6,
             flow_gpm=self._flow_gpm,
         )
 
